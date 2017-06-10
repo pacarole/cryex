@@ -1,0 +1,4 @@
+cron:
+- description: Update Poloniex ticker
+  url: /events/poloniex-ticker
+  schedule: every 1 minutes
