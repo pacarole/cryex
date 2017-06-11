@@ -26,7 +26,7 @@ exports.update = function update(event, callback) {
         let currencyDataPromises = [];
         _.forOwn(tickerData, function(data, currencyPair) {
           currencyDataPromises.push(
-            getCurrencyDataPromise(currencyPair, data, dateTime);
+            getCurrencyDataPromise(currencyPair, data, dateTime)
           );
         });
 
