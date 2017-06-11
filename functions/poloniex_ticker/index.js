@@ -1,7 +1,7 @@
 const Poloniex = require('poloniex-api-node');
 const datastore = require('@google-cloud/datastore')();
 
-const poloniexApiKey = datastore.key(['poloniex_api', 'ticker']);
+const poloniexApiDataStoreKey = datastore.key(['poloniex_api', 'ticker']);
 
 /**
  * Triggered from a message on a Cloud Pub/Sub topic.
@@ -11,7 +11,7 @@ const poloniexApiKey = datastore.key(['poloniex_api', 'ticker']);
  */
 exports.update = function update(event, callback) {
 
-  datastore.get(poloniexApiKey, function(err, entity) {
+  datastore.get(poloniexApiDataStoreKey, function(err, entity) {
     if(err) {
       callback(err);
     } else {
