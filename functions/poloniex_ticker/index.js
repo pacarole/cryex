@@ -13,22 +13,23 @@ const tickerDataStoreKey = datastore.key(['ticker']);
  * @param {!Function} The callback function.
  */
 exports.update = (event, callback) => {
-  datastore.get(poloniexApiDataStoreKey).then(function(entity) {
+  datastore.get(poloniexApiDataStoreKey).then((entity) => {
     const poloniexApiKey = entity['API_KEY'];
     const poloniexApiSecret = entity['SECRET'];
     const poloniexClient = new Poloniex(poloniexApiKey, poloniexApiSecret);
     const dateTime = new Date();
 
-    poloniexClient.returnTicker(function(err, tickerData) {
+    poloniexClient.returnTicker((err, tickerData) => {
       if (!err) {
-        let currencyDataPromises = [];
-        _.forOwn(tickerData, function(data, currencyPair) {
-          currencyDataPromises.push(
-            getCurrencyDataPromise(currencyPair, data, dateTime)
-          );
+        let currencyData = [];
+        _.forOwn(tickerData, (data, currencyPair) => {
+          currencyData.push({
+            key: tickerDataStoreKey,
+            data: formatCurrencyData(currencyPair, data, dateTime)
+          });
         });
 
-        Promise.all(currencyDataPromises).then(function() {
+        datastore.save(currencyData).then(() => {
           callback();
         }).catch(callback);
       } else {
@@ -38,8 +39,8 @@ exports.update = (event, callback) => {
   }).catch(callback);
 };
 
-const getCurrencyDataPromise = (currencyPair, data, dateTime) => {
-  const currencyData = {
+const formatCurrencyData = (currencyPair, data, dateTime) => {
+  return {
     currencyPair: currencyPair,
     dateTime: dateTime,
     last: parseFloat(data.last),
@@ -51,9 +52,17 @@ const getCurrencyDataPromise = (currencyPair, data, dateTime) => {
     isFrozen: data.isFrozen === '1',
     high24hr: parseFloat(data.high24hr)
   };
+}
 
-  return datastore.save({
-    key: tickerDataStoreKey,
-    data: currencyData
+const getBroadcastTickerChangePromise = () => {
+
+}
+
+const getDeleteOldDataPromise = () => {
+  const query = datastore.createQuery('ticker');
+  query.filter('location', 'CA');
+
+  return datastore.runQuery(query).then((entities) => {
+    // entities[0][datastore.KEY];
   });
 }
