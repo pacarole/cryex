@@ -9,6 +9,7 @@ const tickerDataStoreKey = datastore.key(['ticker']);
 const tickerChangeBroadcastTopic = pubsub.topic('new-ticker-data');
 
 const TICKER_MAX_AGE_MINUTES = 20;
+const MS_PER_MINUTE = 60000;
 
 /**
  * Triggered from a message on a Cloud Pub/Sub topic.
@@ -69,7 +70,7 @@ const broadcastTickerChange = () => {
 const getOldTickerEntries = () => {
   const query = datastore.createQuery('ticker');
   const currentDate = new Date();
-  const maxAgeDate = currentDate.addMinutes(-TICKER_MAX_AGE_MINUTES);
+  const maxAgeDate = new Date(currentDate.getTime() - TICKER_MAX_AGE_MINUTES * MS_PER_MINUTE);
   query.filter('dateTime', '<', maxAgeDate);
 
   return datastore.runQuery(query);
