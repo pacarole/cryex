@@ -1,7 +1,10 @@
+const _ = require('lodash');
 const Poloniex = require('poloniex-api-node');
-const datastore = require('@google-cloud/datastore')();
+const Promise = require('bluebird');
+const datastore = require('@google-cloud/datastore')({ promise: Promise });
 
 const poloniexApiDataStoreKey = datastore.key(['poloniex_api', 'ticker']);
+const tickerDataStoreKey = datastore.key(['ticker']);
 
 /**
  * Triggered from a message on a Cloud Pub/Sub topic.
@@ -11,18 +14,46 @@ const poloniexApiDataStoreKey = datastore.key(['poloniex_api', 'ticker']);
  */
 exports.update = function update(event, callback) {
 
-  datastore.get(poloniexApiDataStoreKey, function(err, entity) {
-    if(err) {
-      callback(err);
-    } else {
-      const poloniexApiKey = entity['API_KEY'];
-      const poloniexApiSecret = entity['SECRET'];
-      const poloniexClient = new Poloniex(poloniexApiKey, poloniexApiSecret);
+  datastore.get(poloniexApiDataStoreKey).then(function(entity) {
+    const poloniexApiKey = entity['API_KEY'];
+    const poloniexApiSecret = entity['SECRET'];
+    const poloniexClient = new Poloniex(poloniexApiKey, poloniexApiSecret);
+    const dateTime = new Date();
 
-      poloniexClient.returnTicker(function(err, ticker) {
-        if (!err) console.log(ticker);
-        callback();
-      });
-    }
-  });
+    poloniexClient.returnTicker(function(err, ticker) {
+      if (!err) {
+        let tickerData = JSON.parse(ticker);
+        let currencyDataPromises = [];
+        _.forOwn(tickerData, function(data, currencyPair) {
+          currencyDataPromises.push(
+            getCurrencyDataPromise(currencyPair, data, dateTime);
+          );
+        });
+
+        Promise.all(currencyDataPromises).then(callback).catch(callback);
+      } else {
+        callback(err);
+      }
+    });
+  }).catch(callback);
 };
+
+function getCurrencyDataPromise(currencyPair, data, dateTime) {
+  let currencyData = {
+    currencyPair: currencyPair,
+    dateTime: dateTime,
+    last: parseFloat(data.last),
+    lowestAsk: parseFloat(data.lowerAsk),
+    highestBid: parseFloat(data.highestBid),
+    percentChange: parseFloat(data.percentChange),
+    baseVolume: parseFloat(data.baseVolume),
+    quoteVolume: parseFloat(data.quoteVolume),
+    isFrozen: data.isFrozen === '1',
+    high24hr: parseFloat(data.high24hr)
+  };
+
+  return datastore.save({
+    key: tickerDataStoreKey,
+    data: currencyData
+  });
+}
