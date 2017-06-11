@@ -1,0 +1,8 @@
+{
+  "name": "poloniex-ticker",
+  "version": "0.0.1",
+  "dependencies": {
+    "poloniex-api-node": "~1.1.1",
+    "@google-cloud/datastore": "~1.0.2"
+  }
+}
