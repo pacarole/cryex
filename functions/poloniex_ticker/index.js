@@ -20,9 +20,8 @@ exports.update = function update(event, callback) {
     const poloniexClient = new Poloniex(poloniexApiKey, poloniexApiSecret);
     const dateTime = new Date();
 
-    poloniexClient.returnTicker(function(err, ticker) {
+    poloniexClient.returnTicker(function(err, tickerData) {
       if (!err) {
-        let tickerData = JSON.parse(ticker);
         let currencyDataPromises = [];
         _.forOwn(tickerData, function(data, currencyPair) {
           currencyDataPromises.push(
