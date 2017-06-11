@@ -12,8 +12,7 @@ const tickerDataStoreKey = datastore.key(['ticker']);
  * @param {!Object} event The Cloud Functions event.
  * @param {!Function} The callback function.
  */
-exports.update = function update(event, callback) {
-
+exports.update = (event, callback) => {
   datastore.get(poloniexApiDataStoreKey).then(function(entity) {
     const poloniexApiKey = entity['API_KEY'];
     const poloniexApiSecret = entity['SECRET'];
@@ -39,8 +38,8 @@ exports.update = function update(event, callback) {
   }).catch(callback);
 };
 
-function getCurrencyDataPromise(currencyPair, data, dateTime) {
-  let currencyData = {
+const getCurrencyDataPromise = (currencyPair, data, dateTime) => {
+  const currencyData = {
     currencyPair: currencyPair,
     dateTime: dateTime,
     last: parseFloat(data.last),
