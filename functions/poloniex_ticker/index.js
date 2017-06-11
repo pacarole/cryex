@@ -1,7 +1,7 @@
 const Poloniex = require('poloniex-api-node');
 const datastore = require('@google-cloud/datastore')();
 
-const poloniexApiKey = datastore.key(['poliniex_api', 'ticker']);
+const poloniexApiKey = datastore.key(['poloniex_api', 'ticker']);
 
 /**
  * Triggered from a message on a Cloud Pub/Sub topic.
