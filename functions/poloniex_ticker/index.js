@@ -29,7 +29,9 @@ exports.update = function update(event, callback) {
           );
         });
 
-        Promise.all(currencyDataPromises).then(callback).catch(callback);
+        Promise.all(currencyDataPromises).then(function() {
+          callback();
+        }).catch(callback);
       } else {
         callback(err);
       }
@@ -42,7 +44,7 @@ function getCurrencyDataPromise(currencyPair, data, dateTime) {
     currencyPair: currencyPair,
     dateTime: dateTime,
     last: parseFloat(data.last),
-    lowestAsk: parseFloat(data.lowerAsk),
+    lowestAsk: parseFloat(data.lowestAsk),
     highestBid: parseFloat(data.highestBid),
     percentChange: parseFloat(data.percentChange),
     baseVolume: parseFloat(data.baseVolume),
