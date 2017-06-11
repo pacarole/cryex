@@ -6,6 +6,8 @@ const datastore = require('@google-cloud/datastore')({ promise: Promise });
 const poloniexApiDataStoreKey = datastore.key(['poloniex_api', 'ticker']);
 const tickerDataStoreKey = datastore.key(['ticker']);
 
+const TICKER_MAX_AGE_MINUTES = 20;
+
 /**
  * Triggered from a message on a Cloud Pub/Sub topic.
  *
@@ -29,9 +31,12 @@ exports.update = (event, callback) => {
           });
         });
 
-        datastore.save(currencyData).then(() => {
-          callback();
-        }).catch(callback);
+        datastore.save(currencyData)
+          .then(getOldTickerEntries)
+          .then(deleteTickerEntries)
+          .then(() => {
+            callback();
+          }).catch(callback);
       } else {
         callback(err);
       }
@@ -54,15 +59,20 @@ const formatCurrencyData = (currencyPair, data, dateTime) => {
   };
 }
 
-const getBroadcastTickerChangePromise = () => {
+const broadcastTickerChange = () => {
 
 }
 
-const getDeleteOldDataPromise = () => {
+const getOldTickerEntries = () => {
   const query = datastore.createQuery('ticker');
-  query.filter('location', 'CA');
+  const currentDate = new Date();
+  const maxAgeDate = currentDate.addMinutes(-TICKER_MAX_AGE_MINUTES);
+  query.filter('dateTime', '<', maxAgeDate);
 
-  return datastore.runQuery(query).then((entities) => {
-    // entities[0][datastore.KEY];
-  });
+  return datastore.runQuery(query);
+}
+
+const deleteTickerEntries = (entities) => {
+  const keys = _.pluck(entities, datastore.KEY);
+  return datastore.delete(keys);
 }
