@@ -2,9 +2,11 @@ const _ = require('lodash');
 const Poloniex = require('poloniex-api-node');
 const Promise = require('bluebird');
 const datastore = require('@google-cloud/datastore')({ promise: Promise });
+const pubsub = require('@google-cloud/pubsub')({ promise: Promise });
 
 const poloniexApiDataStoreKey = datastore.key(['poloniex_api', 'ticker']);
 const tickerDataStoreKey = datastore.key(['ticker']);
+const tickerChangeBroadcastTopic = pubsub.topic('new-ticker-data');
 
 const TICKER_MAX_AGE_MINUTES = 20;
 
@@ -32,6 +34,7 @@ exports.update = (event, callback) => {
         });
 
         datastore.save(currencyData)
+          .then(broadcastTickerChange)
           .then(getOldTickerEntries)
           .then(deleteTickerEntries)
           .then(() => {
@@ -60,7 +63,7 @@ const formatCurrencyData = (currencyPair, data, dateTime) => {
 }
 
 const broadcastTickerChange = () => {
-
+  return tickerChangeBroadcastTopic.publish('ticker data updated');
 }
 
 const getOldTickerEntries = () => {
