@@ -33,7 +33,9 @@ exports.update = (event, callback) => {
           });
         });
 
-        broadcastTickerChange().then(getOldTickerEntries)
+        datastore.save(currencyData)
+          .then(broadcastTickerChange)
+          .then(getOldTickerEntries)
           .then(deleteTickerEntries)
           .then(() => {
             callback();
@@ -69,7 +71,6 @@ const getOldTickerEntries = () => {
   const currentDate = new Date();
   const maxAgeDate = new Date(currentDate.getTime() - TICKER_MAX_AGE_MINUTES * MS_PER_MINUTE);
   query.filter('dateTime', '<', maxAgeDate);
-  query.limit(500);
 
   return datastore.runQuery(query);
 }
