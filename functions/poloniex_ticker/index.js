@@ -76,7 +76,9 @@ const getOldTickerEntries = () => {
 }
 
 const deleteTickerEntries = (entities) => {
-  console.log("HERE ARE ENTITIES", entities, datastore.KEY);
+  console.log("HERE ARE ENTITIES", entities);
+  console.log("HERE IS THE KEY", datastore.KEY);
   const keys = _.map(entities, datastore.KEY);
+  console.log("AND THE MAP", keys);
   return datastore.delete(keys);
 }
