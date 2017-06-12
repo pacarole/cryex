@@ -5,7 +5,6 @@ const datastore = require('@google-cloud/datastore')({ promise: Promise });
 const pubsub = require('@google-cloud/pubsub')({ promise: Promise });
 
 const poloniexApiDataStoreKey = datastore.key(['poloniex_api', 'ticker']);
-const tickerDataStoreKey = datastore.key(['ticker']);
 const tickerChangeBroadcastTopic = pubsub.topic('new-ticker-data');
 
 const TICKER_MAX_AGE_MINUTES = 20;
@@ -28,15 +27,14 @@ exports.update = (event, callback) => {
       if (!err) {
         let currencyData = [];
         _.forOwn(tickerData, (data, currencyPair) => {
-          currencyData.push(
-            formatCurrencyData(currencyPair, data, dateTime)
-          );
+          currencyData.push({
+            key: datastore.key(['ticker']),
+            data: formatCurrencyData(currencyPair, data, dateTime)
+          });
         });
 
-        datastore.save({
-          key: tickerDataStoreKey,
-          data: currencyData
-        }).then(broadcastTickerChange)
+        datastore.save(currencyData)
+          .then(broadcastTickerChange)
           .then(getOldTickerEntries)
           .then(deleteTickerEntries)
           .then(() => {
