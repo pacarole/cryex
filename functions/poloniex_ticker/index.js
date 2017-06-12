@@ -33,7 +33,7 @@ exports.update = (event, callback) => {
           });
         });
 
-        broadcastTickerChange.then(getOldTickerEntries)
+        broadcastTickerChange().then(getOldTickerEntries)
           .then(deleteTickerEntries)
           .then(() => {
             callback();
