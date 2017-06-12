@@ -28,14 +28,15 @@ exports.update = (event, callback) => {
       if (!err) {
         let currencyData = [];
         _.forOwn(tickerData, (data, currencyPair) => {
-          currencyData.push({
-            key: tickerDataStoreKey,
-            data: formatCurrencyData(currencyPair, data, dateTime)
-          });
+          currencyData.push(
+            formatCurrencyData(currencyPair, data, dateTime)
+          );
         });
 
-        datastore.save(currencyData)
-          .then(broadcastTickerChange)
+        datastore.save({
+          key: tickerDataStoreKey,
+          data: currencyData
+        }).then(broadcastTickerChange)
           .then(getOldTickerEntries)
           .then(deleteTickerEntries)
           .then(() => {
