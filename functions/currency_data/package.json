@@ -5,6 +5,7 @@
     "@google-cloud/datastore": "~1.0.2",
     "@google-cloud/pubsub": "~0.13.0",
     "bluebird": "~3.5.0",
-    "lodash": "~4.17.4"
+    "lodash": "~4.17.4",
+    "simple-statistics": "~4.1.0"
   }
 }

@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
+const stats = require('simple-statistics');
 const datastore = require('@google-cloud/datastore')({ promise: Promise });
 const pubsub = require('@google-cloud/pubsub')({ promise: Promise });
 
@@ -59,6 +60,15 @@ const formatCurrencyData = (currencyPair, data, dateTime) => {
     isFrozen: data.isFrozen === '1',
     high24hr: parseFloat(data.high24hr)
   };
+
+
+  /*
+    let samples = [[0, 0], [1, 1]];
+    let regression = stats.linearRegression(samples);
+    let slope = regression.m;
+    let regressionLine = stats.linearRegressionLine(regression);
+    let volatility = stats.rSquared(samples, regressionLine); // = 1 this line is a perfect fit
+  */
 }
 
 const broadcastCurrencyDataChange = () => {
