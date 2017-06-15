@@ -87,7 +87,6 @@ const getCurrencyEntries = (currency) => {
   query.filter('dateTime', '>', maxAgeDate);
   query.filter('currencyPair', '>', 'USDT_AAAA');
   query.filter('currencyPair', '<', 'USDT_ZZZZ');
-  query.order('dateTime', { descending: true });
 
   return datastore.runQuery(query);
 }
