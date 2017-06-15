@@ -81,7 +81,6 @@ const getCurrencyEntries = (currency) => {
   const query = datastore.createQuery('ticker');
   query.filter('currencyPair', '>', 'USDT_AAAA');
   query.filter('currencyPair', '<', 'USDT_ZZZZ');
-  query.order('dateTime', { descending: true });
 
   return datastore.runQuery(query);
 }
