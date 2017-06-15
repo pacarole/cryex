@@ -25,8 +25,11 @@ exports.update = (event, callback) => {
 };
 
 const aggregateAndSaveCurrencyData = (entities) => {
-  const filteredEntities = _.filer(entities[0], (entity) => {
-    return entity.match(/^USDT_.+/);
+  const currentDate = new Date();
+  const maxAgeDate = new Date(currentDate.getTime() - CURRENCY_AGGREGATION_MINUTES * MS_PER_MINUTE);
+
+  const filteredEntities = _.filter(entities[0], (entity) => {
+    return entity.dateTime > maxAgeDate;
   });
 
   const currencyPairs = _.map(filteredEntities, 'currencyPair');
@@ -86,9 +89,8 @@ const broadcastCurrencyDataChange = () => {
 
 const getCurrencyEntries = (currency) => {
   const query = datastore.createQuery('ticker');
-  const currentDate = new Date();
-  const maxAgeDate = new Date(currentDate.getTime() - CURRENCY_AGGREGATION_MINUTES * MS_PER_MINUTE);
-  query.filter('dateTime', '>', maxAgeDate);
+  query.filter('currencyPair', '>', 'USDT_AAAA');
+  query.filter('currencyPair', '<', 'USDT_ZZZZ');
 
   return datastore.runQuery(query);
 }
