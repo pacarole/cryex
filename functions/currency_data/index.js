@@ -8,7 +8,6 @@ const currencyChangeBroadcastTopic = pubsub.topic('new-currency-data');
 
 const CURRENCY_AGGREGATION_MINUTES = 15;
 const MS_PER_MINUTE = 60000;
-const currencies = ['BTC', 'ETH', 'ETC', 'XRP', 'NXT', 'LTC', 'ZEC', 'DASH', 'STR', 'XMR', 'REP'];
 
 /**
  * Triggered from a message on a Cloud Pub/Sub topic.
@@ -17,58 +16,64 @@ const currencies = ['BTC', 'ETH', 'ETC', 'XRP', 'NXT', 'LTC', 'ZEC', 'DASH', 'ST
  * @param {!Function} The callback function.
  */
 exports.update = (event, callback) => {
-  datastore.get(poloniexApiDataStoreKey).then((entity) => {
-    const poloniexApiKey = entity['API_KEY'];
-    const poloniexApiSecret = entity['SECRET'];
-    const poloniexClient = new Poloniex(poloniexApiKey, poloniexApiSecret);
-    const dateTime = new Date();
-
-    poloniexClient.returnTicker((err, tickerData) => {
-      if (!err) {
-        let currencyData = [];
-        _.forOwn(tickerData, (data, currencyPair) => {
-          currencyData.push({
-            key: datastore.key(['ticker']),
-            data: formatCurrencyData(currencyPair, data, dateTime)
-          });
-        });
-
-        datastore.save(currencyData)
-          .then(broadcastTickerChange)
-          .then(getOldTickerEntries)
-          .then(deleteTickerEntries)
-          .then(() => {
-            callback();
-          }).catch(callback);
-      } else {
-        callback(err);
-      }
-    });
-  }).catch(callback);
+  getCurrencyEntries()
+    .then(aggregateAndSaveCurrencyData)
+    .then(broadcastCurrencyDataChange)
+    .then(() => {
+      callback();
+    }).catch(callback);
 };
 
-const formatCurrencyData = (currencyPair, data, dateTime) => {
+const aggregateAndSaveCurrencyData = (entities) => {
+  const currencyPairs = _.map(entities[0], 'currencyPairs');
+  const uniqueCurrencyPairs = _.uniq(currencyPairs);
+  let dataForCurrencies = {};
+
+  _.forEach(uniqueCurrencyPairs, (currencyPair) => {
+    let dataForCurrency = _.filter(entities[0], (entity) => {
+      return entity.currencyPair === currencyPair;
+    });
+
+    let currency = currencyPair.split('_')[1];
+    dataForCurrencies[currency] = dataForCurrency;
+  });
+
+  let currencyData = [];
+  _.forOwn(dataForCurrencies, (data, currency) => {
+    currencyData.push({
+      key: datastore.key(['currency_data', currency]),
+      data: aggregateCurrencyData(currency, data)
+    });
+  });
+
+  return datastore.save(currencyData);
+}
+
+const aggregateCurrencyData = (currency, data) => {
+  // guarantee order by date
+  const tickerRows = _.sortBy(data, (row) => {
+    return row.dateTime.getTime();
+  });
+
+  const numRows = tickerRows.length;
+  const oldestRow = tickerRows[0];
+  const newestRow = tickerRows(numRows - 1);
+
+  let samples = [];
+  for(var i=0; i < numRows; i++) {
+    samples.push([ i, tickerRows[i].last ]);
+  }
+
+  const regression = stats.linearRegression(samples);
+  const regressionLine = stats.linearRegressionLine(regression);
+
   return {
-    currencyPair: currencyPair,
-    dateTime: dateTime,
-    last: parseFloat(data.last),
-    lowestAsk: parseFloat(data.lowestAsk),
-    highestBid: parseFloat(data.highestBid),
-    percentChange: parseFloat(data.percentChange),
-    baseVolume: parseFloat(data.baseVolume),
-    quoteVolume: parseFloat(data.quoteVolume),
-    isFrozen: data.isFrozen === '1',
-    high24hr: parseFloat(data.high24hr)
+    currentPrice: newestRow.last,
+    pastPrice: oldestRow.last,
+    slope: regression.m,
+    volatilityFactor: stats.rSquared(samples, regressionLine),
+    24hVolume: newestRow.baseVolume
   };
-
-
-  /*
-    let samples = [[0, 0], [1, 1]];
-    let regression = stats.linearRegression(samples);
-    let slope = regression.m;
-    let regressionLine = stats.linearRegressionLine(regression);
-    let volatility = stats.rSquared(samples, regressionLine); // = 1 this line is a perfect fit
-  */
 }
 
 const broadcastCurrencyDataChange = () => {
@@ -79,14 +84,10 @@ const getCurrencyEntries = (currency) => {
   const query = datastore.createQuery('ticker');
   const currentDate = new Date();
   const maxAgeDate = new Date(currentDate.getTime() - CURRENCY_AGGREGATION_MINUTES * MS_PER_MINUTE);
-  query.filter('dateTime', '<', maxAgeDate);
-  query.filter('currencyPair', 'USDT_'+currency);
-  query.order('dataTime', { descending: true });
+  query.filter('dateTime', '>', maxAgeDate);
+  query.filter('currencyPair', '>', 'USDT_AAAA');
+  query.filter('currencyPair', '<', 'USDT_ZZZZ');
+  query.order('dateTime', { descending: true });
 
   return datastore.runQuery(query);
-}
-
-const deleteTickerEntries = (entities) => {
-  const keys = _.map(entities[0], datastore.KEY);
-  return datastore.delete(keys);
 }
