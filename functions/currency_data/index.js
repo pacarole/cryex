@@ -54,7 +54,7 @@ const aggregateCurrencyData = (currency, data) => {
 
   const numRows = tickerRows.length;
   const oldestRow = tickerRows[0];
-  const newestRow = tickerRows(numRows - 1);
+  const newestRow = tickerRows[numRows - 1];
 
   let samples = [];
   for(var i=0; i < numRows; i++) {
