@@ -1,0 +1,7 @@
+indexes:
+
+- kind: ticker
+  properties:
+  - name: currencyPair
+  - name: dateTime
+    direction: desc
