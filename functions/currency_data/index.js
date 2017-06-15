@@ -72,7 +72,7 @@ const aggregateCurrencyData = (currency, data) => {
     pastPrice: oldestRow.last,
     slope: regression.m,
     volatilityFactor: stats.rSquared(samples, regressionLine),
-    24hVolume: newestRow.baseVolume
+    volume24h: newestRow.baseVolume
   };
 }
 
