@@ -22,7 +22,7 @@ exports.update = (event, callback) => {
 };
 
 const aggregateAndSaveCurrencyData = (entities) => {
-  const currencyPairs = _.map(entities[0], 'currencyPairs');
+  const currencyPairs = _.map(entities[0], 'currencyPair');
   const uniqueCurrencyPairs = _.uniq(currencyPairs);
   let dataForCurrencies = {};
 
