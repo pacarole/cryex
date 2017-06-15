@@ -6,9 +6,6 @@ const pubsub = require('@google-cloud/pubsub')({ promise: Promise });
 
 const currencyChangeBroadcastTopic = pubsub.topic('new-currency-data');
 
-const CURRENCY_AGGREGATION_MINUTES = 15;
-const MS_PER_MINUTE = 60000;
-
 /**
  * Triggered from a message on a Cloud Pub/Sub topic.
  *
@@ -82,9 +79,6 @@ const broadcastCurrencyDataChange = () => {
 
 const getCurrencyEntries = (currency) => {
   const query = datastore.createQuery('ticker');
-  const currentDate = new Date();
-  const maxAgeDate = new Date(currentDate.getTime() - CURRENCY_AGGREGATION_MINUTES * MS_PER_MINUTE);
-  query.filter('dateTime', '>', maxAgeDate);
   query.filter('currencyPair', '>', 'USDT_AAAA');
   query.filter('currencyPair', '<', 'USDT_ZZZZ');
   query.order('dateTime', { descending: true });
