@@ -68,7 +68,7 @@ const aggregateCurrencyData = (currency, data) => {
   const fistTimeStamp = oldestRow.dateTime.getTime();
   
   let samples = [];
-  _.forEach(numRows, (row) => {
+  _.forEach(tickerRows, (row) => {
     let adjustedTime = row.dateTime.getTime() - fistTimeStamp;
     let adjustedTimeInMinutes = adjustedTime / MS_PER_MINUTE;
     samples.push([ adjustedTimeInMinutes, row.last ]);
