@@ -73,6 +73,8 @@ const aggregateCurrencyData = (currency, data) => {
     let adjustedTimeInMinutes = adjustedTime / MS_PER_MINUTE;
     samples.push([ adjustedTimeInMinutes, row.last ]);
   });
+  
+  console.log(currency, samples);
 
   const regression = stats.linearRegression(samples);
   const regressionLine = stats.linearRegressionLine(regression);
