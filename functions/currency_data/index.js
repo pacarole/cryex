@@ -65,11 +65,14 @@ const aggregateCurrencyData = (currency, data) => {
   const numRows = tickerRows.length;
   const oldestRow = tickerRows[0];
   const newestRow = tickerRows[numRows - 1];
-
+  const fistTimeStamp = oldestRow.dateTime.getTime();
+  
   let samples = [];
-  for(var i=0; i < numRows; i++) {
-    samples.push([ i, tickerRows[i].last ]);
-  }
+  _.forEach(numRows, (row) => {
+    let adjustedTime = row.dateTime.getTime() - fistTimeStamp;
+    let adjustedTimeInMinutes = adjustedTime / MS_PER_MINUTE;
+    samples.push([ adjustedTimeInMinutes, row.last ]);
+  });
 
   const regression = stats.linearRegression(samples);
   const regressionLine = stats.linearRegressionLine(regression);
