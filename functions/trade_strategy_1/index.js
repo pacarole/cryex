@@ -17,8 +17,8 @@ const MS_PER_MINUTE = 60000;
 exports.buyOrSell = (event, callback) => {
   const batchRequests = [getCurrencyData(), getAccountInfo()];
   
- Promise.all(backRequests).then(([currencyData, accountInfo]) => {
-    chooseToBuyOrSell(currencyData, accountInfo).then(() => {
+ Promise.all(backRequests).then(([currencyDataEntities, accountInfo]) => {
+    chooseToBuyOrSell(currencyDataEntities[0], accountInfo).then(() => {
       callback();
     }).catch(callback);
   }).catch(callback);
@@ -39,6 +39,11 @@ const getAccountInfo = () => {
 }
 
 const buy = (currencyData, accountInfo) => {
+ currencyData = _.sortBy(currencyData, () => {
+   return currencyData.slope * currencyData.volatilityFactor;
+ });
+  currencyData.reverse();
+  
   // sort by splope * volatility
   // make buy decisions
 }
