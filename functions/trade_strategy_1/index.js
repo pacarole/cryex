@@ -45,7 +45,7 @@ const sell = (accountInfo) => {
 
 const broadcastNewTransactionChange = (currency, price, quantity) => {
   const transcationString = currency + ':' + price + ':' + quantity;
-  return currencyChangeBroadcastTopic.publish(transactionString);
+  return newTransactionBroadcastTopic.publish(transactionString);
 }
 
 const getCurrencyData = () => {
