@@ -15,32 +15,36 @@ const MS_PER_MINUTE = 60000;
  * @param {!Function} The callback function.
  */
 exports.buyOrSell = (event, callback) => {
-  getAccountInfo().then((accountInfo) => {
-    chooseToBuyOrSell(accountInfo).then(() => {
+  const batchRequests = [getCurrencyData(), getAccountInfo()];
+  
+ Promise.all(backRequests).then(([currencyData, accountInfo]) => {
+    chooseToBuyOrSell(currencyData, accountInfo).then(() => {
       callback();
     }).catch(callback);
   }).catch(callback);
 };
 
-const chooseToBuyOrSell = (accountInfo) => {
+const chooseToBuyOrSell = (currencyData, accountInfo) => {
   if(accountInfo.lastAction == 'SELL') {
-    return buy(accountInfo);
+    return buy(currencyData, accountInfo);
   } else {
-    return sell(accountInfo);
+    return sell(currencyData, accountInfo);
   }
 }
+
 
 const getAccountInfo = () => {
   // if no current transcations
   
 }
 
-const buy = (accountInfo) => {
-  
+const buy = (currencyData, accountInfo) => {
+  // sort by splope * volatility
+  // make buy decisions
 }
 
-const sell = (accountInfo) => {
-
+const sell = (currencyData, accountInfo) => {
+  
 }
 
 const broadcastNewTransactionChange = (currency, price, quantity) => {
