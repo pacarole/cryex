@@ -148,6 +148,7 @@ const getPoloniexClient = () => {
 }
 
 const updateAccountInfo = (currencyName, currentPrice, newBuyPrice) => {
+  console.log("UPDATING ACCOUNT", currencyName, currentPrice, newBuyPrice);
   const buyPriceProp = currencyName + '_buyPrice';
   const peakPriceProp = currencyName + '_peakPrice';
   const lowPriceProp = currencyName + '_lowPrice';
@@ -163,7 +164,6 @@ const updateAccountInfo = (currencyName, currentPrice, newBuyPrice) => {
     if(currentPrice < accountInfo[lowPriceProp]) newAccountInfo[lowPriceProp] = currentPrice;    
   }
   
-  console.log("NEW INFO", newAccountInfo);
   if(_.size(newAccountInfo) > 0) {
     return datastore.get(accountInfoDataStoreKey).then((accountInfoEntity) => {
       console.log("REAL VALUE", accountInfoEntity[0], _.merge(accountInfoEntity[0], newAccountInfo));
