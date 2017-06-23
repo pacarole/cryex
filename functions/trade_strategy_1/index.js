@@ -33,13 +33,13 @@ exports.buyOrSell = (event, callback) => {
 
 const chooseToBuyOrSell = (currencyData, accountInfo) => {
   if(!accountInfo.lastAction || accountInfo.lastAction == 'SELL') {
-    return buy(currencyData);
+    return buy(currencyData, accountInfo);
   } else {
     return sell(currencyData, accountInfo);
   }
 }
 
-const buy = (currencyData) => {
+const buy = (currencyData, accountInfo) => {
   // sort currency data w/ positive slope by slope * volatilityFactor
   let filteredCurrencyData = _.filter(currencyData, (datum) => {
     return datum.slope > 0;
@@ -58,14 +58,14 @@ const buy = (currencyData) => {
           let availableCash = parseFloat(balances.USDT);
           if(_.isUndefined(maxBuyCash)) maxBuyCash = availableCash * MAX_BUY_DIVIDER;
           
-          return makeBuyDecision(maxBuyCash, availableCash, currencyInfo);
+          return makeBuyDecision(maxBuyCash, availableCash, currencyInfo, accountInfo);
         });
       }).then(resolve).catch(reject);
     }).catch(reject);                  
   });
 }
 
-const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
+const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo, accountInfo) => {
   const buyCash = availableCash < maxBuyCash ? availableCash : maxBuyCash;
   const priceIncreasePercentage = (currencyInfo.currentPrice - currencyInfo.pastPrice) / currencyInfo.pastPrice * 100;
   const stabilityThreshold = 5 - 4 * currencyInfo.volatilityFactor;
@@ -76,9 +76,11 @@ const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
     const rate = currencyInfo.currentPrice;
     const amount = buyCash / rate;
     
-    return poloniexBuy(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */); 
+    return poloniexBuy(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */).then(() => {
+      return updateAccountInfo(accountInfo, currencyInfo.name, rate, rate);
+    }); 
   } else {
-    Promise.resolve();
+    return updateAccountInfo(accountInfo, currencyInfo.name, currencyInfo.currentPrice);
   }
 }
 
@@ -90,7 +92,9 @@ const sell = (currencyData, accountInfo) => {
   return new Promise((resolve, reject) => {
     poloniexReturnBalances.then((balances) => {
       Promise.each(filteredCurrencyData, (currencyInfo) => {
-        return makeSellDecision(balances, currencyInfo, accountInfo);
+        return makeSellDecision(balances, currencyInfo, accountInfo).then(() => {
+          return updateAccountInfo(accountInfo, currencyInfo.name, currencyInfo.currentPrice);
+        });
       }).then(resolve).catch(reject);
     }).catch(reject);                  
   });
@@ -129,12 +133,30 @@ const getPoloniexClient = () => {
   });
 }
 
-const updateAccountInfo = () => {
+const updateAccountInfo = (accountInfo, currencyName, currentPrice, newBuyPrice) => {
+  const buyPriceProp = currencyName + '_buyPrice';
+  const peakPriceProp = currencyName + '_peakPrice';
+  const lowPriceProp = currencyName + '_lowPrice';
   
+  let newAccountInfo = {};
   
-   const buyPrice = accountInfo[currencyName + '_buyPrice'];
-  const peakPrice = accountInfo[currencyName + '_peakPrice'];
-  const lowPrice = accountInfo[currencyName + '_lowPrice'];
+  if(newBuyPrice) {
+    newAccountInfo[buyPriceProp] = currentPrice;
+    newAccountInfo[peakPriceProp] = currentPrice;
+    newAccountInfo[lowPriceProp] = currentPrice;
+  } else {
+    if(currentPrice > accountInfo[peakPriceProp]) newAccountInfo[peakPriceProp] = currentPrice;
+    if(currentPrice < accountInfo[lowPriceProp]) newAccountInfo[lowPriceProp] = currentPrice;    
+  }
+  
+  if(_.size(newAccountInfo) > 0) {
+    datastore.update({
+      key: accountInfoDataStoreKey,
+      data: data
+    });
+  } else {
+    return Promise.resolve();
+  }
 }
 
 const getCurrencyData = () => {
