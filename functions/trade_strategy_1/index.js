@@ -125,7 +125,7 @@ const makeSellDecision = (balances, currencyInfo) => {
     if(currencyBalance > 0 && shouldSell) {
       const currencyPair = 'USDT_' + currencyName;
       const rate = currencyInfo.currentPrice;
-      const amount = currencyBalance / rate;
+      const amount = currencyBalance;
 
       return poloniexClient.sell(currencyPair, rate, amount, null /* fillOrKill */, 1 /* immediateOrCancel */);
     } else {
