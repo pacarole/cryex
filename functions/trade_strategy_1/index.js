@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
+const Poloniex = require('poloniex-api-node');
 const datastore = require('@google-cloud/datastore')({ promise: Promise });
 
 const poloniexApiDataStoreKey = datastore.key(['poloniex_api', 'strategy1']);
