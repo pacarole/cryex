@@ -78,7 +78,7 @@ const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
   const currencyName = currencyInfo[datastore.KEY].name;
   const buyCash = availableCash < maxBuyCash ? availableCash : maxBuyCash;
   const priceIncreasePercentage = (currencyInfo.currentPrice - currencyInfo.pastPrice) / currencyInfo.pastPrice * 100;
-  const stabilityThreshold = 5 - 4 * currencyInfo.volatilityFactor;
+  const stabilityThreshold = 0.1 - 0.05 * currencyInfo.volatilityFactor;
   const shouldBuy = priceIncreasePercentage > stabilityThreshold;
 
   if(buyCash > 0 && shouldBuy) {
