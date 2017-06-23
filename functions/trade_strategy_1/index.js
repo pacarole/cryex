@@ -88,7 +88,7 @@ const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
     
     console.log("READY TO BUY", currencyPair, rate, amount, buyCash);
     
-    return poloniexClient.buy(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */).then(() => {
+    return poloniexClient.buy(currencyPair, rate, amount, null /* fillOrKill */, 1 /* immediateOrCancel */).then(() => {
       return updateAccountInfo(currencyName, rate, rate);
     });
   } else {
@@ -127,7 +127,7 @@ const makeSellDecision = (balances, currencyInfo) => {
       const rate = currencyInfo.currentPrice;
       const amount = currencyBalance / rate;
 
-      return poloniexClient.sell(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */);
+      return poloniexClient.sell(currencyPair, rate, amount, null /* fillOrKill */, 1 /* immediateOrCancel */);
     } else {
       return Promise.resolve();
     }
