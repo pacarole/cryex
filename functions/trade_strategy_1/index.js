@@ -160,6 +160,7 @@ const getPoloniexClient = () => {
       const poloniexApiKey = entity['API_KEY'];
       const poloniexApiSecret = entity['SECRET'];
       const poloniexClient = new Poloniex(poloniexApiKey, poloniexApiSecret);
+      console.log("SOME LOGGING", poloniexApiKey, poloniexClient);
       resolve(poloniexClient);
     }).catch(reject);
   });
