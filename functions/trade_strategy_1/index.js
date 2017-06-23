@@ -113,16 +113,20 @@ const makeSellDecision = (balances, currencyInfo) => {
   const buyPrice = accountInfo[currencyName + '_buyPrice'];
   const peakPrice = accountInfo[currencyName + '_peakPrice'];
   
-  const peakPriceDifferential = (peakPrice - currencyInfo.currentPrice) / (peakPrice - buyPrice) * 100;
-  const stabilityThreshold = 15 - 5 * currencyInfo.volatilityFactor;
-  const shouldSell = peakPriceDifferential > stabilityThreshold;
-  
-  if(currencyBalance > 0 && shouldSell) {
-    const currencyPair = 'USDT_' + currencyName;
-    const rate = currencyInfo.currentPrice;
-    const amount = currencyBalance / rate;
-    
-    return poloniexClient.sellAsync(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */);
+  if(buyPrice) {
+    const peakPriceDifferential = (peakPrice - currencyInfo.currentPrice) / (peakPrice - buyPrice) * 100;
+    const stabilityThreshold = 15 - 5 * currencyInfo.volatilityFactor;
+    const shouldSell = peakPriceDifferential > stabilityThreshold;
+
+    if(currencyBalance > 0 && shouldSell) {
+      const currencyPair = 'USDT_' + currencyName;
+      const rate = currencyInfo.currentPrice;
+      const amount = currencyBalance / rate;
+
+      return poloniexClient.sellAsync(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */);
+    } else {
+      return Promise.resolve();
+    }
   } else {
     return Promise.resolve();
   }
@@ -150,7 +154,7 @@ const updateAccountInfo = (currencyName, currentPrice, newBuyPrice) => {
     newAccountInfo[buyPriceProp] = currentPrice;
     newAccountInfo[peakPriceProp] = currentPrice;
     newAccountInfo[lowPriceProp] = currentPrice;
-  } else {
+  } else if(accountInfo[buyPriceProp]) {
     if(currentPrice > accountInfo[peakPriceProp]) newAccountInfo[peakPriceProp] = currentPrice;
     if(currentPrice < accountInfo[lowPriceProp]) newAccountInfo[lowPriceProp] = currentPrice;    
   }
