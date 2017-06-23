@@ -65,7 +65,7 @@ const buy = () => {
     poloniexClient.returnBalancesAsync().then((balances) => {
       let availableCash = parseFloat(balances.USDT);
       if(_.isUndefined(maxBuyCash)) maxBuyCash = availableCash * MAX_BUY_DIVIDER;
-      console.log("CURRENCY INDEX", currencyInfo.key.id, currenceInfo.key.name);
+      console.log("CURRENCY ID", currencyInfo.name);
       return makeBuyDecision(maxBuyCash, availableCash, currencyInfo);
     });
   });
