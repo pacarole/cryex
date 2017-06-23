@@ -37,7 +37,7 @@ const chooseToBuyOrSell = () => {
       return datastore.get(accountInfoDataStoreKey).then((accountInfoEntity) => {
         return datastore.save({
           key: accountInfoDataStoreKey,
-          data: _.merge(accountInfoEntity[0], { lastAction: 'BUY' });
+          data: _.merge(accountInfoEntity[0], { lastAction: 'BUY' })
         });
       });
     });
@@ -46,7 +46,7 @@ const chooseToBuyOrSell = () => {
       return datastore.get(accountInfoDataStoreKey).then((accountInfoEntity) => {
         return datastore.save({
           key: accountInfoDataStoreKey,
-          data: _.merge(accountInfoEntity[0], { lastAction: 'SELL' });
+          data: _.merge(accountInfoEntity[0], { lastAction: 'SELL' })
         });
       });
     });
@@ -165,7 +165,7 @@ const updateAccountInfo = (currencyName, currentPrice, newBuyPrice) => {
     return datastore.get(accountInfoDataStoreKey).then((accountInfoEntity) => {
       return datastore.save({
         key: accountInfoDataStoreKey,
-        data: _.merge(accountInfoEntity[0], newAccountInfo);
+        data: _.merge(accountInfoEntity[0], newAccountInfo)
       });
     });
   } else {
