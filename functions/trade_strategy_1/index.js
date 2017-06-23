@@ -157,8 +157,8 @@ const makeSellDecision = (poloniexClient, balances, currencyInfo, accountInfo) =
 const getPoloniexClient = () => {
   return new Promise((resolve, reject) => {
     datastore.get(poloniexApiDataStoreKey).then((entity) => {
-      const poloniexApiKey = entity['API_KEY'];
-      const poloniexApiSecret = entity['SECRET'];
+      const poloniexApiKey = entity[0]['API_KEY'];
+      const poloniexApiSecret = entity[0]['SECRET'];
       const poloniexClient = new Poloniex(poloniexApiKey, poloniexApiSecret);
       resolve(poloniexClient);
     }).catch(reject);
