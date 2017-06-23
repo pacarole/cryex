@@ -33,14 +33,14 @@ exports.buyOrSell = (event, callback) => {
 
 const chooseToBuyOrSell = (currencyData, accountInfo) => {
   if(!accountInfo.lastAction || accountInfo.lastAction == 'SELL') {
-    return buy(currencyData, accountInfo).then(() {
+    return buy(currencyData, accountInfo).then(() => {
       return datastore.update({
         key: accountInfoDataStoreKey,
         data: { lastAction: 'BUY' };
       });
     });
   } else {
-    return sell(currencyData, accountInfo).then(() {
+    return sell(currencyData, accountInfo).then(() => {
       return datastore.update({
         key: accountInfoDataStoreKey,
         data: { lastAction: 'SELL' };
