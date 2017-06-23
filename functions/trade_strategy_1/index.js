@@ -65,7 +65,6 @@ const buy = () => {
     poloniexClient.returnBalancesAsync().then((balances) => {
       let availableCash = parseFloat(balances.USDT);
       if(_.isUndefined(maxBuyCash)) maxBuyCash = availableCash * MAX_BUY_DIVIDER;
-      console.log("CURRENCY ID", currencyInfo[datastore.KEY]);
       return makeBuyDecision(maxBuyCash, availableCash, currencyInfo);
     });
   });
@@ -78,15 +77,15 @@ const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
   const shouldBuy = priceIncreasePercentage > stabilityThreshold;
 
   if(buyCash > 0 && shouldBuy) {
-    const currencyPair = 'USDT_' + currencyInfo.name;
+    const currencyPair = 'USDT_' + currencyInfo[datastore.KEY].name;
     const rate = currencyInfo.currentPrice;
     const amount = buyCash / rate;
     
     return poloniexClient.buyAsync(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */).then(() => {
-      return updateAccountInfo(currencyInfo.name, rate, rate);
+      return updateAccountInfo(currencyInfo[datastore.KEY].name, rate, rate);
     });
   } else {
-    return updateAccountInfo(currencyInfo.name, currencyInfo.currentPrice);
+    return updateAccountInfo(currencyInfo[datastore.KEY].name, currencyInfo.currentPrice);
   }
 }
 
@@ -98,14 +97,14 @@ const sell = () => {
   return poloniexClient.returnBalancesAsync().then((balances) => {
     return Promise.each(filteredCurrencyData, (currencyInfo) => {
       return makeSellDecision(balances, currencyInfo).then(() => {
-        return updateAccountInfo(accountInfo, currencyInfo.name, currencyInfo.currentPrice);
+        return updateAccountInfo(accountInfo, currencyInfo[datastore.KEY].name, currencyInfo.currentPrice);
       });
     });                
   });
 }
 
 const makeSellDecision = (balances, currencyInfo) => {
-  const currencyName = currencyInfo.name;
+  const currencyName = currencyInfo[datastore.KEY].name;
   const currencyBalance = parseFloat(balances[currencyName]);
   
   const buyPrice = accountInfo[currencyName + '_buyPrice'];
