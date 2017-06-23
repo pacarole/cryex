@@ -97,7 +97,7 @@ const sell = () => {
     return datum.slope < 0;
   });
   
-  return poloniexClient.returnBalances().then((balances) => {
+  return poloniexClient.returnBalancesAsync().then((balances) => {
     return Promise.each(filteredCurrencyData, (currencyInfo) => {
       return makeSellDecision(balances, currencyInfo).then(() => {
         return updateAccountInfo(accountInfo, currencyInfo.name, currencyInfo.currentPrice);
