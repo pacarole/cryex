@@ -36,14 +36,14 @@ const chooseToBuyOrSell = (currencyData, accountInfo) => {
     return buy(currencyData, accountInfo).then(() => {
       return datastore.update({
         key: accountInfoDataStoreKey,
-        data: { lastAction: 'BUY' };
+        data: { lastAction: 'BUY' }
       });
     });
   } else {
     return sell(currencyData, accountInfo).then(() => {
       return datastore.update({
         key: accountInfoDataStoreKey,
-        data: { lastAction: 'SELL' };
+        data: { lastAction: 'SELL' }
       });
     });
   }
