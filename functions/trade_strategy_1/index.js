@@ -159,8 +159,8 @@ const getPoloniexClient = () => {
     datastore.get(poloniexApiDataStoreKey).then((entity) => {
       const poloniexApiKey = entity['API_KEY'];
       const poloniexApiSecret = entity['SECRET'];
+      console.log("SOME LOGGING", poloniexApiKey, poloniexApiSecret, entity);
       const poloniexClient = new Poloniex(poloniexApiKey, poloniexApiSecret);
-      console.log("SOME LOGGING", poloniexApiKey, poloniexClient);
       resolve(poloniexClient);
     }).catch(reject);
   });
