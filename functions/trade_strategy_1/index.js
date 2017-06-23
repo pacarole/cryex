@@ -23,7 +23,7 @@ exports.buyOrSell = (event, callback) => {
   Promise.all(batchRequests).then((promiseResults) => {
     poloniexClient = Promise.promisifyAll(promiseResults[0]);
     currencyData = promiseResults[1][0];
-    accountInfo = promiseResults[2];
+    accountInfo = promiseResults[2][0];
     
     chooseToBuyOrSell().then(() => {
       callback();
