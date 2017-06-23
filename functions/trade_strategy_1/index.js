@@ -86,6 +86,8 @@ const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
     const rate = currencyInfo.currentPrice;
     const amount = buyCash / rate;
     
+    console.log("READY TO BUY", currencyPair, rate, amount, buyCash);
+    
     return poloniexClient.buyAsync(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */).then(() => {
       return updateAccountInfo(currencyName, rate, rate);
     });
