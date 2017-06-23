@@ -71,21 +71,22 @@ const buy = () => {
 }
 
 const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
+  const currencyName = currencyInfo[datastore.KEY].name;
   const buyCash = availableCash < maxBuyCash ? availableCash : maxBuyCash;
   const priceIncreasePercentage = (currencyInfo.currentPrice - currencyInfo.pastPrice) / currencyInfo.pastPrice * 100;
   const stabilityThreshold = 5 - 4 * currencyInfo.volatilityFactor;
   const shouldBuy = priceIncreasePercentage > stabilityThreshold;
 
   if(buyCash > 0 && shouldBuy) {
-    const currencyPair = 'USDT_' + currencyInfo[datastore.KEY].name;
+    const currencyPair = 'USDT_' + currencyName;
     const rate = currencyInfo.currentPrice;
     const amount = buyCash / rate;
     
     return poloniexClient.buyAsync(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */).then(() => {
-      return updateAccountInfo(currencyInfo[datastore.KEY].name, rate, rate);
+      return updateAccountInfo(currencyName, rate, rate);
     });
   } else {
-    return updateAccountInfo(currencyInfo[datastore.KEY].name, currencyInfo.currentPrice);
+    return updateAccountInfo(currencyName, currencyInfo.currentPrice);
   }
 }
 
@@ -97,7 +98,7 @@ const sell = () => {
   return poloniexClient.returnBalancesAsync().then((balances) => {
     return Promise.each(filteredCurrencyData, (currencyInfo) => {
       return makeSellDecision(balances, currencyInfo).then(() => {
-        return updateAccountInfo(accountInfo, currencyInfo[datastore.KEY].name, currencyInfo.currentPrice);
+        return updateAccountInfo(currencyInfo[datastore.KEY].name, currencyInfo.currentPrice);
       });
     });                
   });
