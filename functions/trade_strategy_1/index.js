@@ -1,10 +1,9 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
-const stats = require('simple-statistics');
 const datastore = require('@google-cloud/datastore')({ promise: Promise });
-const pubsub = require('@google-cloud/pubsub')({ promise: Promise });
 
 const poloniexApiDataStoreKey = datastore.key(['poloniex_api', 'strategy1']);
+const accountInfoDataStoreKey = datastore.key(['account_info', 'strategy1']);
 
 const MS_PER_MINUTE = 60000;
 const MAX_BUY_DIVIDER = 1/3;
@@ -18,7 +17,7 @@ let poloniexClientSingleton, poloniexReturnBalances, poloniexBuy, poloniexSell;
  * @param {!Function} The callback function.
  */
 exports.buyOrSell = (event, callback) => {
-  const batchRequests = [getPoloniexClient(), getCurrencyData(), getAccountInfo()];
+  const batchRequests = [getPoloniexClient(), getCurrencyData(), datastore.get(accountInfoDataStoreKey)];
   
   Promise.all(backRequests).then(([poloniexClient, currencyDataEntities, accountInfo]) => {
     poloniexClientSingleton = poloniexClient;
@@ -33,28 +32,11 @@ exports.buyOrSell = (event, callback) => {
 };
 
 const chooseToBuyOrSell = (currencyData, accountInfo) => {
-  if(accountInfo.lastAction == 'SELL') {
-    return buy(currencyData, accountInfo);
+  if(!accountInfo.lastAction || accountInfo.lastAction == 'SELL') {
+    return buy(currencyData);
   } else {
     return sell(currencyData, accountInfo);
   }
-}
-
-const getPoloniexClient = () => {
-  return new Promise((resolve, reject) => {
-    datastore.get(poloniexApiDataStoreKey).then((entity) => {
-      const poloniexApiKey = entity['API_KEY'];
-      const poloniexApiSecret = entity['SECRET'];
-      const poloniexClient = new Poloniex(poloniexApiKey, poloniexApiSecret);
-      resolve(poloniexClient);
-    }).catch(reject);
-  });
-}
-
-const getAccountInfo = () => {
-
-  
-  
 }
 
 const buy = (currencyData) => {
@@ -74,7 +56,7 @@ const buy = (currencyData) => {
       Promise.each(filteredCurrencyData, (currencyInfo) => {
         return poloniexReturnBalances.then((balances) => {
           let availableCash = parseFloat(balances.USDT);
-          if(_.isUndefined(maxBuyAmount)) maxBuyCash = availableCash * MAX_BUY_DIVIDER;
+          if(_.isUndefined(maxBuyCash)) maxBuyCash = availableCash * MAX_BUY_DIVIDER;
           
           return makeBuyDecision(maxBuyCash, availableCash, currencyInfo);
         });
@@ -107,22 +89,26 @@ const sell = (currencyData, accountInfo) => {
   
   return new Promise((resolve, reject) => {
     poloniexReturnBalances.then((balances) => {
-
       Promise.each(filteredCurrencyData, (currencyInfo) => {
-        return makeSellDecision(balances, currencyInfo);
+        return makeSellDecision(balances, currencyInfo, accountInfo);
       }).then(resolve).catch(reject);
     }).catch(reject);                  
   });
 }
 
-const makeSellDecision = (balances, currencyInfo) => {
-  const currencyBalance = balances[currencyInfo.name];
-  const priceIncreasePercentage = (currencyInfo.currentPrice - currencyInfo.pastPrice) / currencyInfo.pastPrice * 100;
-  const stabilityThreshold = 5 - 4 * currencyInfo.volatilityFactor;
-  const shouldBuy = priceIncreasePercentage > stabilityThreshold;
+const makeSellDecision = (balances, currencyInfo, accountInfo) => {
+  const currencyName = currencyInfo.name;
+  const currencyBalance = balances[currencyName];
   
-  if(shouldSell) {
-    const currencyPair = 'USDT_' + currencyInfo.name;
+  const buyPrice = accountInfo[currencyName + '_buyPrice'];
+  const peakPrice = accountInfo[currencyName + '_peakPrice'];
+  
+  const peakPriceDifferential = (peakPrice - currencyInfo.currentPrice) / (peakPrice - buyPrice) * 100;
+  const stabilityThreshold = 15 - 5 * currencyInfo.volatilityFactor;
+  const shouldSell = peakPriceDifferential > stabilityThreshold;
+  
+  if(currencyBalance > 0 && shouldSell) {
+    const currencyPair = 'USDT_' + currencyName;
     const rate = currencyInfo.currentPrice;
     const amount = currencyBalance / rate;
     
@@ -132,7 +118,26 @@ const makeSellDecision = (balances, currencyInfo) => {
   }
 }
 
+const getPoloniexClient = () => {
+  return new Promise((resolve, reject) => {
+    datastore.get(poloniexApiDataStoreKey).then((entity) => {
+      const poloniexApiKey = entity['API_KEY'];
+      const poloniexApiSecret = entity['SECRET'];
+      const poloniexClient = new Poloniex(poloniexApiKey, poloniexApiSecret);
+      resolve(poloniexClient);
+    }).catch(reject);
+  });
+}
+
+const updateAccountInfo = () => {
+  
+  
+   const buyPrice = accountInfo[currencyName + '_buyPrice'];
+  const peakPrice = accountInfo[currencyName + '_peakPrice'];
+  const lowPrice = accountInfo[currencyName + '_lowPrice'];
+}
+
 const getCurrencyData = () => {
-  const query = datastore.createQuery('currency-data');
+  const query = datastore.createQuery('currency_data');
   return datastore.runQuery(query);
 }
