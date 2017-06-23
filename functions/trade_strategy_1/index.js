@@ -9,7 +9,7 @@ const accountInfoDataStoreKey = datastore.key(['account_info', 'strategy1']);
 const MS_PER_MINUTE = 60000;
 const MAX_BUY_DIVIDER = 1/3;
 
-let poloniexClientSingleton, poloniexReturnBalances, poloniexBuy, poloniexSell;
+let poloniexClientSingleton, poloniexReturnBalances, poloniexBuy, poloniexSell = null;
 
 /**
  * Triggered from a message on a Cloud Pub/Sub topic.
