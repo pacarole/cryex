@@ -33,7 +33,6 @@ exports.buyOrSell = (event, callback) => {
 
 const chooseToBuyOrSell = () => {
   if(!accountInfo.lastAction || accountInfo.lastAction == 'SELL') {
-    console.log("BUY TIME");
     return buy().then(() => {
       return datastore.update({
         key: accountInfoDataStoreKey,
@@ -41,7 +40,6 @@ const chooseToBuyOrSell = () => {
       });
     });
   } else {
-    console.log("SELL TIME");
     return sell().then(() => {
       return datastore.update({
         key: accountInfoDataStoreKey,
@@ -61,17 +59,13 @@ const buy = () => {
   });
   filteredCurrencyData.reverse();
   
-  console.log("CURRENCY LIST", filteredCurrencyData);
-  
   let maxBuyCash;
 
   return Promise.each(filteredCurrencyData, (currencyInfo) => {
     poloniexClient.returnBalancesAsync().then((balances) => {
-      console.log("currencyInfo", currencyInfo);
-      console.log("cash", availableCash);
       let availableCash = parseFloat(balances.USDT);
       if(_.isUndefined(maxBuyCash)) maxBuyCash = availableCash * MAX_BUY_DIVIDER;
-
+      console.log("CURRENCY INDEX", currencyInfo.key.id, currenceInfo.key.name);
       return makeBuyDecision(maxBuyCash, availableCash, currencyInfo);
     });
   });
@@ -82,19 +76,17 @@ const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
   const priceIncreasePercentage = (currencyInfo.currentPrice - currencyInfo.pastPrice) / currencyInfo.pastPrice * 100;
   const stabilityThreshold = 5 - 4 * currencyInfo.volatilityFactor;
   const shouldBuy = priceIncreasePercentage > stabilityThreshold;
-  
-  console.log("BUY FACTORS", buyCash, shouldBuy);
-  
+
   if(buyCash > 0 && shouldBuy) {
-    const currencyPair = 'USDT_' + currencyInfo.name;
+    const currencyPair = 'USDT_' + currencyInfo.key.name;
     const rate = currencyInfo.currentPrice;
     const amount = buyCash / rate;
     
     return poloniexClient.buyAsync(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */).then(() => {
-      return updateAccountInfo(currencyInfo.name, rate, rate);
+      return updateAccountInfo(currencyInfo.key.name, rate, rate);
     });
   } else {
-    return updateAccountInfo(currencyInfo.name, currencyInfo.currentPrice);
+    return updateAccountInfo(currencyInfo.key.name, currencyInfo.currentPrice);
   }
 }
 
@@ -106,14 +98,14 @@ const sell = () => {
   return poloniexClient.returnBalancesAsync().then((balances) => {
     return Promise.each(filteredCurrencyData, (currencyInfo) => {
       return makeSellDecision(balances, currencyInfo).then(() => {
-        return updateAccountInfo(accountInfo, currencyInfo.name, currencyInfo.currentPrice);
+        return updateAccountInfo(accountInfo, currencyInfo.key.name, currencyInfo.currentPrice);
       });
     });                
   });
 }
 
 const makeSellDecision = (balances, currencyInfo) => {
-  const currencyName = currencyInfo.name;
+  const currencyName = currencyInfo.key.name;
   const currencyBalance = parseFloat(balances[currencyName]);
   
   const buyPrice = accountInfo[currencyName + '_buyPrice'];
@@ -123,8 +115,6 @@ const makeSellDecision = (balances, currencyInfo) => {
     const peakPriceDifferential = (peakPrice - currencyInfo.currentPrice) / (peakPrice - buyPrice) * 100;
     const stabilityThreshold = 15 - 5 * currencyInfo.volatilityFactor;
     const shouldSell = peakPriceDifferential > stabilityThreshold;
-
-    console.log("SELL FACTORS", currencyBalance, shouldSell);
     
     if(currencyBalance > 0 && shouldSell) {
       const currencyPair = 'USDT_' + currencyName;
@@ -167,10 +157,7 @@ const updateAccountInfo = (currencyName, currentPrice, newBuyPrice) => {
     if(currentPrice < accountInfo[lowPriceProp]) newAccountInfo[lowPriceProp] = currentPrice;    
   }
   
-  console.log("MAYBE UPDATE", newAccountInfo);
   if(_.size(newAccountInfo) > 0) {
-    console.log("UPDATE!", newAccountInfo);
-    
     datastore.update({
       key: accountInfoDataStoreKey,
       data: newAccountInfo
