@@ -164,7 +164,7 @@ const updateAccountInfo = (currencyName, currentPrice, newBuyPrice) => {
   console.log("NEW INFO", newAccountInfo);
   if(_.size(newAccountInfo) > 0) {
     return datastore.get(accountInfoDataStoreKey).then((accountInfoEntity) => {
-      console.log("REAL VALUE", accountInfoEntity[0], _.merge(accountInfoEntity[0], newAccountInfo);
+      console.log("REAL VALUE", accountInfoEntity[0], _.merge(accountInfoEntity[0], newAccountInfo));
       return datastore.save({
         key: accountInfoDataStoreKey,
         data: _.merge(accountInfoEntity[0], newAccountInfo)
