@@ -5,7 +5,6 @@ const datastore = require('@google-cloud/datastore')({ promise: Promise });
 const pubsub = require('@google-cloud/pubsub')({ promise: Promise });
 
 const poloniexApiDataStoreKey = datastore.key(['poloniex_api', 'strategy1']);
-// const newTransactionBroadcastTopic = pubsub.topic('new-transaction');
 
 const MS_PER_MINUTE = 60000;
 const MAX_BUY_DIVIDER = 1/3;
@@ -102,7 +101,35 @@ const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
 }
 
 const sell = (currencyData, accountInfo) => {
+   let filteredCurrencyData = _.filter(currencyData, (datum) => {
+    return datum.slope < 0;
+  });
   
+  return new Promise((resolve, reject) => {
+    poloniexReturnBalances.then((balances) => {
+
+      Promise.each(filteredCurrencyData, (currencyInfo) => {
+        return makeSellDecision(balances, currencyInfo);
+      }).then(resolve).catch(reject);
+    }).catch(reject);                  
+  });
+}
+
+const makeSellDecision = (balances, currencyInfo) => {
+  const currencyBalance = balances[currencyInfo.name];
+  const priceIncreasePercentage = (currencyInfo.currentPrice - currencyInfo.pastPrice) / currencyInfo.pastPrice * 100;
+  const stabilityThreshold = 5 - 4 * currencyInfo.volatilityFactor;
+  const shouldBuy = priceIncreasePercentage > stabilityThreshold;
+  
+  if(shouldSell) {
+    const currencyPair = 'USDT_' + currencyInfo.name;
+    const rate = currencyInfo.currentPrice;
+    const amount = currencyBalance / rate;
+    
+    return poloniexSell(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */); 
+  } else {
+    Promise.resolve();
+  }
 }
 
 const getCurrencyData = () => {
