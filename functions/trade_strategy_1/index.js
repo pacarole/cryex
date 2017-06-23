@@ -9,7 +9,7 @@ const accountInfoDataStoreKey = datastore.key(['account_info', 'strategy1']);
 const MS_PER_MINUTE = 60000;
 const MAX_BUY_DIVIDER = 1/3;
 
-let poloniexReturnBalances, poloniexBuy, poloniexSell;
+let poloniexClientSingleton;
 
 /**
  * Triggered from a message on a Cloud Pub/Sub topic.
@@ -21,10 +21,7 @@ exports.buyOrSell = (event, callback) => {
   const batchRequests = [getPoloniexClient(), getCurrencyData(), datastore.get(accountInfoDataStoreKey)];
   
   Promise.all(batchRequests).then(([poloniexClient, currencyDataEntities, accountInfo]) => {
-    poloniexReturnBalances = Promise.promisify(poloniexClient.returnBalances, { context: poloniexClient });
-    poloniexBuy = Promise.promisify(poloniexClient.buy, { context: poloniexClient });
-    poloniexSel = Promise.promisify(poloniexClient.sell, { context: poloniexClient });
-   
+    poloniexClientSingleton = poloniexClient;
     chooseToBuyOrSell(currencyDataEntities[0], accountInfo).then(() => {
       callback();
     }).catch(callback);
@@ -60,18 +57,22 @@ const buy = (currencyData, accountInfo) => {
   filteredCurrencyData.reverse();
   
   return new Promise((resolve, reject) => {
-    poloniexReturnBalances.then((balances) => {
-      let maxBuyCash;
+    poloniexClientSingleton.returnBalances((err, balances) => {
+      if(err) {
+        reject(err);
+      } else {
+        let maxBuyCash;
       
-      Promise.each(filteredCurrencyData, (currencyInfo) => {
-        return poloniexReturnBalances.then((balances) => {
-          let availableCash = parseFloat(balances.USDT);
-          if(_.isUndefined(maxBuyCash)) maxBuyCash = availableCash * MAX_BUY_DIVIDER;
-          
-          return makeBuyDecision(maxBuyCash, availableCash, currencyInfo, accountInfo);
-        });
-      }).then(resolve).catch(reject);
-    }).catch(reject);                  
+        Promise.each(filteredCurrencyData, (currencyInfo) => {
+          return poloniexReturnBalances.then((balances) => {
+            let availableCash = parseFloat(balances.USDT);
+            if(_.isUndefined(maxBuyCash)) maxBuyCash = availableCash * MAX_BUY_DIVIDER;
+
+            return makeBuyDecision(maxBuyCash, availableCash, currencyInfo, accountInfo);
+          });
+        }).then(resolve).catch(reject);
+      }
+    });                
   });
 }
 
@@ -86,9 +87,15 @@ const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo, accountInfo) =
     const rate = currencyInfo.currentPrice;
     const amount = buyCash / rate;
     
-    return poloniexBuy(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */).then(() => {
-      return updateAccountInfo(accountInfo, currencyInfo.name, rate, rate);
-    }); 
+    return new Promise((resolve, reject) => {
+      poloniexClientSingleton.buy(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */, (err) => {
+        if(err) {
+          reject(err);
+        } else {
+          updateAccountInfo(accountInfo, currencyInfo.name, rate, rate).then(resolve).catch(reject);
+        }
+      });
+    });
   } else {
     return updateAccountInfo(accountInfo, currencyInfo.name, currencyInfo.currentPrice);
   }
@@ -100,13 +107,17 @@ const sell = (currencyData, accountInfo) => {
   });
   
   return new Promise((resolve, reject) => {
-    poloniexReturnBalances.then((balances) => {
-      Promise.each(filteredCurrencyData, (currencyInfo) => {
-        return makeSellDecision(balances, currencyInfo, accountInfo).then(() => {
-          return updateAccountInfo(accountInfo, currencyInfo.name, currencyInfo.currentPrice);
-        });
-      }).then(resolve).catch(reject);
-    }).catch(reject);                  
+    poloniexClientSingleton.returnBalances((err, balances) => {
+      if(err) {
+        reject(err);
+      } else {
+        Promise.each(filteredCurrencyData, (currencyInfo) => {
+          return makeSellDecision(balances, currencyInfo, accountInfo).then(() => {
+            return updateAccountInfo(accountInfo, currencyInfo.name, currencyInfo.currentPrice);
+          });
+        }).then(resolve).catch(reject);
+      }
+    });                  
   });
 }
 
@@ -126,7 +137,15 @@ const makeSellDecision = (balances, currencyInfo, accountInfo) => {
     const rate = currencyInfo.currentPrice;
     const amount = currencyBalance / rate;
     
-    return poloniexSell(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */); 
+    return new Promise((resolve, reject) => {
+      poloniexClientSingleton.sell(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */, (err) => {
+        if(err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
   } else {
     Promise.resolve();
   }
