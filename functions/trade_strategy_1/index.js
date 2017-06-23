@@ -59,18 +59,16 @@ const buy = () => {
   });
   filteredCurrencyData.reverse();
   
-  return poloniexClient.returnBalancesAsync().then((balances) => {
-    let maxBuyCash;
+  let maxBuyCash;
 
-    return Promise.each(filteredCurrencyData, (currencyInfo) => {
-      poloniexClient.returnBalancesAsync().then((balances) => {
-        let availableCash = parseFloat(balances.USDT);
-        if(_.isUndefined(maxBuyCash)) maxBuyCash = availableCash * MAX_BUY_DIVIDER;
+  return Promise.each(filteredCurrencyData, (currencyInfo) => {
+    poloniexClient.returnBalancesAsync().then((balances) => {
+      let availableCash = parseFloat(balances.USDT);
+      if(_.isUndefined(maxBuyCash)) maxBuyCash = availableCash * MAX_BUY_DIVIDER;
 
-        return makeBuyDecision(maxBuyCash, availableCash, currencyInfo);
-      });
+      return makeBuyDecision(maxBuyCash, availableCash, currencyInfo);
     });
-  }); 
+  });
 }
 
 const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
@@ -108,7 +106,7 @@ const sell = () => {
 
 const makeSellDecision = (balances, currencyInfo) => {
   const currencyName = currencyInfo.name;
-  const currencyBalance = balances[currencyName];
+  const currencyBalance = parseFloat(balances[currencyName]);
   
   const buyPrice = accountInfo[currencyName + '_buyPrice'];
   const peakPrice = accountInfo[currencyName + '_peakPrice'];
