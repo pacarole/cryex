@@ -9,7 +9,7 @@ const accountInfoDataStoreKey = datastore.key(['account_info', 'strategy1']);
 const MS_PER_MINUTE = 60000;
 const MAX_BUY_DIVIDER = 1/3;
 
-let poloniexClientSingleton, poloniexReturnBalances, poloniexBuy, poloniexSell;
+let poloniexReturnBalances, poloniexBuy, poloniexSell;
 
 /**
  * Triggered from a message on a Cloud Pub/Sub topic.
@@ -21,11 +21,9 @@ exports.buyOrSell = (event, callback) => {
   const batchRequests = [getPoloniexClient(), getCurrencyData(), datastore.get(accountInfoDataStoreKey)];
   
   Promise.all(batchRequests).then(([poloniexClient, currencyDataEntities, accountInfo]) => {
-    poloniexClientSingleton = poloniexClient;
-    poloniexReturnBalances = Promise.promisify(poloniexClientSingleton.returnBalances, { context: poloniexClientSingleton });
-    console.log("SEE RESULTS", poloniexReturnBalances);
-    poloniexBuy = Promise.promisify(poloniexClientSingleton.buy, { context: poloniexClientSingleton });
-    poloniexSel = Promise.promisify(poloniexClientSingleton.sell, { context: poloniexClientSingleton });
+    poloniexReturnBalances = Promise.promisify(poloniexClient.returnBalances, { context: poloniexClient });
+    poloniexBuy = Promise.promisify(poloniexClient.buy, { context: poloniexClient });
+    poloniexSel = Promise.promisify(poloniexClient.sell, { context: poloniexClient });
    
     chooseToBuyOrSell(currencyDataEntities[0], accountInfo).then(() => {
       callback();
