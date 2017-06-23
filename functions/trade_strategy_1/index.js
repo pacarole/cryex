@@ -5,9 +5,10 @@ const datastore = require('@google-cloud/datastore')({ promise: Promise });
 const pubsub = require('@google-cloud/pubsub')({ promise: Promise });
 
 const poloniexApiDataStoreKey = datastore.key(['poloniex_api', 'strategy1']);
-const newTransactionBroadcastTopic = pubsub.topic('new-transaction');
+// const newTransactionBroadcastTopic = pubsub.topic('new-transaction');
 
 const MS_PER_MINUTE = 60000;
+const MAX_BUY_DIVIDER = 1/3;
 
 /**
  * Triggered from a message on a Cloud Pub/Sub topic.
@@ -52,28 +53,29 @@ const getAccountInfo = () => {
 
 const buy = (currencyData, accountInfo) => {
  
- // sort currency data w/ positive slope by slope * volatilityFactor
- let filteredCurrencyData = _.filter(currencyData, (datum) => {
-   return datum.slope > 0;
- });
- filteredCurrencyData = _.sortBy(filteredCurrencyData, (datum) => {
-   return datum.slope * datum.volatilityFactor;
- });
- currencyData.reverse();
+  // sort currency data w/ positive slope by slope * volatilityFactor
+  let filteredCurrencyData = _.filter(currencyData, (datum) => {
+    return datum.slope > 0;
+  });
+  filteredCurrencyData = _.sortBy(filteredCurrencyData, (datum) => {
+    return datum.slope * datum.volatilityFactor;
+  });
+  filteredCurrencyData.reverse();
  
   
   
   
- // make buy decisions
+  // make buy decisions
+}
+
+const makeBuyDecision = (availableCash, maxBuyAmount, currencyInfo) => {
+  // (currentPrice - pastPrice) / pastPrice > 5 - 4 * volatilityFactor
+  // maxBuyAmount
+  
 }
 
 const sell = (currencyData, accountInfo) => {
   
-}
-
-const broadcastNewTransactionChange = (currency, price, quantity) => {
-  const transcationString = currency + ':' + price + ':' + quantity;
-  return newTransactionBroadcastTopic.publish(transactionString);
 }
 
 const getCurrencyData = () => {
