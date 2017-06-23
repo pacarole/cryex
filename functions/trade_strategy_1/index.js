@@ -19,7 +19,7 @@ let poloniexClientSingleton, poloniexReturnBalances, poloniexBuy, poloniexSell;
 exports.buyOrSell = (event, callback) => {
   const batchRequests = [getPoloniexClient(), getCurrencyData(), datastore.get(accountInfoDataStoreKey)];
   
-  Promise.all(backRequests).then(([poloniexClient, currencyDataEntities, accountInfo]) => {
+  Promise.all(batchRequests).then(([poloniexClient, currencyDataEntities, accountInfo]) => {
     poloniexClientSingleton = poloniexClient;
     poloniexReturnBalances = Promise.promisify(poloniexClientSingleton.returnBalances);
     poloniexBuy = Promise.promisify(poloniexClientSingleton.buy);
@@ -152,7 +152,7 @@ const updateAccountInfo = (accountInfo, currencyName, currentPrice, newBuyPrice)
   if(_.size(newAccountInfo) > 0) {
     datastore.update({
       key: accountInfoDataStoreKey,
-      data: data
+      data: newAccountInfo
     });
   } else {
     return Promise.resolve();
