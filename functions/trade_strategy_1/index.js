@@ -4,6 +4,7 @@ const stats = require('simple-statistics');
 const datastore = require('@google-cloud/datastore')({ promise: Promise });
 const pubsub = require('@google-cloud/pubsub')({ promise: Promise });
 
+const poloniexApiDataStoreKey = datastore.key(['poloniex_api', 'strategy1']);
 const newTransactionBroadcastTopic = pubsub.topic('new-transaction');
 
 const MS_PER_MINUTE = 60000;
@@ -15,37 +16,55 @@ const MS_PER_MINUTE = 60000;
  * @param {!Function} The callback function.
  */
 exports.buyOrSell = (event, callback) => {
-  const batchRequests = [getCurrencyData(), getAccountInfo()];
+  const batchRequests = [getPoloniexClient(), getCurrencyData(), getAccountInfo()];
   
- Promise.all(backRequests).then(([currencyDataEntities, accountInfo]) => {
-    chooseToBuyOrSell(currencyDataEntities[0], accountInfo).then(() => {
+ Promise.all(backRequests).then(([poloniexClient, currencyDataEntities, accountInfo]) => {
+    chooseToBuyOrSell(poloniexClient, currencyDataEntities[0], accountInfo).then(() => {
       callback();
     }).catch(callback);
   }).catch(callback);
 };
 
-const chooseToBuyOrSell = (currencyData, accountInfo) => {
+const chooseToBuyOrSell = (poloniexClient, currencyData, accountInfo) => {
   if(accountInfo.lastAction == 'SELL') {
-    return buy(currencyData, accountInfo);
+    return buy(poloniexClient, currencyData, accountInfo);
   } else {
-    return sell(currencyData, accountInfo);
+    return sell(poloniexClient, currencyData, accountInfo);
   }
 }
 
+const getPoloniexClient = () => {
+  return new Promise((resolve, reject) => {
+    datastore.get(poloniexApiDataStoreKey).then((entity) => {
+      const poloniexApiKey = entity['API_KEY'];
+      const poloniexApiSecret = entity['SECRET'];
+      const poloniexClient = new Poloniex(poloniexApiKey, poloniexApiSecret);
+      resolve(poloniexClient);
+    }).catch(reject);
+  });
+}
 
 const getAccountInfo = () => {
-  // if no current transcations
+
+  
   
 }
 
 const buy = (currencyData, accountInfo) => {
- currencyData = _.sortBy(currencyData, () => {
-   return currencyData.slope * currencyData.volatilityFactor;
+ 
+ // sort currency data w/ positive slope by slope * volatilityFactor
+ let filteredCurrencyData = _.filter(currencyData, (datum) => {
+   return datum.slope > 0;
  });
-  currencyData.reverse();
+ filteredCurrencyData = _.sortBy(filteredCurrencyData, (datum) => {
+   return datum.slope * datum.volatilityFactor;
+ });
+ currencyData.reverse();
+ 
   
-  // sort by splope * volatility
-  // make buy decisions
+  
+  
+ // make buy decisions
 }
 
 const sell = (currencyData, accountInfo) => {
