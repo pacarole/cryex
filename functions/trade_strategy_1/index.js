@@ -9,6 +9,8 @@ const accountInfoDataStoreKey = datastore.key(['account_info', 'strategy1']);
 const MS_PER_MINUTE = 60000;
 const MAX_BUY_DIVIDER = 1/3;
 
+let poloniexClient, currencyData, accountInfo;
+
 /**
  * Triggered from a message on a Cloud Pub/Sub topic.
  *
@@ -19,22 +21,25 @@ exports.buyOrSell = (event, callback) => {
   const batchRequests = [getPoloniexClient(), getCurrencyData(), datastore.get(accountInfoDataStoreKey)];
   
   Promise.all(batchRequests).then((promiseResults) => {
-    chooseToBuyOrSell(promiseResults[0], promiseResults[1][0], promiseResults[2]).then(() => {
+    poloniexClient = promiseResults[0];
+    currencyData = promiseResults[1][0];
+    accountInfo = promiseResults[2];
+    chooseToBuyOrSell().then(() => {
       callback();
     }).catch(callback);
   }).catch(callback);
 };
 
-const chooseToBuyOrSell = (poloniexClient, currencyData, accountInfo) => {
+const chooseToBuyOrSell = () => {
   if(!accountInfo.lastAction || accountInfo.lastAction == 'SELL') {
-    return buy(poloniexClient, currencyData, accountInfo).then(() => {
+    return buy().then(() => {
       return datastore.update({
         key: accountInfoDataStoreKey,
         data: { lastAction: 'BUY' }
       });
     });
   } else {
-    return sell(poloniexClient, currencyData, accountInfo).then(() => {
+    return sell().then(() => {
       return datastore.update({
         key: accountInfoDataStoreKey,
         data: { lastAction: 'SELL' }
@@ -43,7 +48,7 @@ const chooseToBuyOrSell = (poloniexClient, currencyData, accountInfo) => {
   }
 }
 
-const buy = (poloniexClient, currencyData, accountInfo) => {
+const buy = () => {
   // sort currency data w/ positive slope by slope * volatilityFactor
   let filteredCurrencyData = _.filter(currencyData, (datum) => {
     return datum.slope > 0;
@@ -69,7 +74,7 @@ const buy = (poloniexClient, currencyData, accountInfo) => {
                 let availableCash = parseFloat(balances.USDT);
                 if(_.isUndefined(maxBuyCash)) maxBuyCash = availableCash * MAX_BUY_DIVIDER;
 
-                makeBuyDecision(poloniexClient, maxBuyCash, availableCash, currencyInfo, accountInfo).then(resolve).catch(reject);
+                makeBuyDecision(maxBuyCash, availableCash, currencyInfo).then(resolve).catch(reject);
               }
             });
           }); 
@@ -79,7 +84,7 @@ const buy = (poloniexClient, currencyData, accountInfo) => {
   });
 }
 
-const makeBuyDecision = (poloniexClient, maxBuyCash, availableCash, currencyInfo, accountInfo) => {
+const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
   const buyCash = availableCash < maxBuyCash ? availableCash : maxBuyCash;
   const priceIncreasePercentage = (currencyInfo.currentPrice - currencyInfo.pastPrice) / currencyInfo.pastPrice * 100;
   const stabilityThreshold = 5 - 4 * currencyInfo.volatilityFactor;
@@ -95,16 +100,16 @@ const makeBuyDecision = (poloniexClient, maxBuyCash, availableCash, currencyInfo
         if(err) {
           reject(err);
         } else {
-          updateAccountInfo(accountInfo, currencyInfo.name, rate, rate).then(resolve).catch(reject);
+          updateAccountInfo(currencyInfo.name, rate, rate).then(resolve).catch(reject);
         }
       });
     });
   } else {
-    return updateAccountInfo(accountInfo, currencyInfo.name, currencyInfo.currentPrice);
+    return updateAccountInfo(currencyInfo.name, currencyInfo.currentPrice);
   }
 }
 
-const sell = (poloniexClient, currencyData, accountInfo) => {
+const sell = () => {
    let filteredCurrencyData = _.filter(currencyData, (datum) => {
     return datum.slope < 0;
   });
@@ -115,7 +120,7 @@ const sell = (poloniexClient, currencyData, accountInfo) => {
         reject(err);
       } else {
         Promise.each(filteredCurrencyData, (currencyInfo) => {
-          return makeSellDecision(poloniexClient, balances, currencyInfo, accountInfo).then(() => {
+          return makeSellDecision(balances, currencyInfo).then(() => {
             return updateAccountInfo(accountInfo, currencyInfo.name, currencyInfo.currentPrice);
           });
         }).then(resolve).catch(reject);
@@ -124,7 +129,7 @@ const sell = (poloniexClient, currencyData, accountInfo) => {
   });
 }
 
-const makeSellDecision = (poloniexClient, balances, currencyInfo, accountInfo) => {
+const makeSellDecision = (balances, currencyInfo) => {
   const currencyName = currencyInfo.name;
   const currencyBalance = balances[currencyName];
   
@@ -165,7 +170,7 @@ const getPoloniexClient = () => {
   });
 }
 
-const updateAccountInfo = (accountInfo, currencyName, currentPrice, newBuyPrice) => {
+const updateAccountInfo = (currencyName, currentPrice, newBuyPrice) => {
   const buyPriceProp = currencyName + '_buyPrice';
   const peakPriceProp = currencyName + '_peakPrice';
   const lowPriceProp = currencyName + '_lowPrice';
