@@ -21,9 +21,10 @@ exports.buyOrSell = (event, callback) => {
   const batchRequests = [getPoloniexClient(), getCurrencyData(), datastore.get(accountInfoDataStoreKey)];
   
   Promise.all(batchRequests).then((promiseResults) => {
-    poloniexClient = promiseResults[0];
+    poloniexClient = Promise.promisifyAll(promiseResults[0]);
     currencyData = promiseResults[1][0];
     accountInfo = promiseResults[2];
+    
     chooseToBuyOrSell().then(() => {
       callback();
     }).catch(callback);
@@ -58,30 +59,18 @@ const buy = () => {
   });
   filteredCurrencyData.reverse();
   
-  return new Promise((resolve, reject) => {
-    poloniexClient.returnBalances((err, balances) => {
-      if(err) {
-        reject(err);
-      } else {
-        let maxBuyCash;
-      
-        Promise.each(filteredCurrencyData, (currencyInfo) => {
-          return new Promise((resolve, reject) => {
-            poloniexClient.returnBalances((err, balances) => {
-              if(err) {
-                reject(err);
-              } else {
-                let availableCash = parseFloat(balances.USDT);
-                if(_.isUndefined(maxBuyCash)) maxBuyCash = availableCash * MAX_BUY_DIVIDER;
+  return poloniexClient.returnBalancesAsync().then((balances) => {
+    let maxBuyCash;
 
-                makeBuyDecision(maxBuyCash, availableCash, currencyInfo).then(resolve).catch(reject);
-              }
-            });
-          }); 
-        });
-      }
-    });                
-  });
+    return Promise.each(filteredCurrencyData, (currencyInfo) => {
+      poloniexClient.returnBalancesAsync().then((balances) => {
+        let availableCash = parseFloat(balances.USDT);
+        if(_.isUndefined(maxBuyCash)) maxBuyCash = availableCash * MAX_BUY_DIVIDER;
+
+        return makeBuyDecision(maxBuyCash, availableCash, currencyInfo);
+      });
+    });
+  }); 
 }
 
 const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
@@ -95,14 +84,8 @@ const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
     const rate = currencyInfo.currentPrice;
     const amount = buyCash / rate;
     
-    return new Promise((resolve, reject) => {
-      poloniexClient.buy(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */, (err) => {
-        if(err) {
-          reject(err);
-        } else {
-          updateAccountInfo(currencyInfo.name, rate, rate).then(resolve).catch(reject);
-        }
-      });
+    return poloniexClient.buyAsync(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */).then(() => {
+      return updateAccountInfo(currencyInfo.name, rate, rate);
     });
   } else {
     return updateAccountInfo(currencyInfo.name, currencyInfo.currentPrice);
@@ -114,18 +97,12 @@ const sell = () => {
     return datum.slope < 0;
   });
   
-  return new Promise((resolve, reject) => {
-    poloniexClient.returnBalances((err, balances) => {
-      if(err) {
-        reject(err);
-      } else {
-        Promise.each(filteredCurrencyData, (currencyInfo) => {
-          return makeSellDecision(balances, currencyInfo).then(() => {
-            return updateAccountInfo(accountInfo, currencyInfo.name, currencyInfo.currentPrice);
-          });
-        }).then(resolve).catch(reject);
-      }
-    });                  
+  return poloniexClient.returnBalances().then((balances) => {
+    return Promise.each(filteredCurrencyData, (currencyInfo) => {
+      return makeSellDecision(balances, currencyInfo).then(() => {
+        return updateAccountInfo(accountInfo, currencyInfo.name, currencyInfo.currentPrice);
+      });
+    });                
   });
 }
 
@@ -145,15 +122,7 @@ const makeSellDecision = (balances, currencyInfo) => {
     const rate = currencyInfo.currentPrice;
     const amount = currencyBalance / rate;
     
-    return new Promise((resolve, reject) => {
-      poloniexClient.sell(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */, (err) => {
-        if(err) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
-    });
+    return poloniexClient.sellAsync(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */);
   } else {
     Promise.resolve();
   }
