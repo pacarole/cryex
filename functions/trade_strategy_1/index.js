@@ -18,8 +18,8 @@ const MAX_BUY_DIVIDER = 1/3;
 exports.buyOrSell = (event, callback) => {
   const batchRequests = [getPoloniexClient(), getCurrencyData(), datastore.get(accountInfoDataStoreKey)];
   
-  Promise.all(batchRequests).then(([poloniexClient, currencyDataEntities, accountInfo]) => {
-    chooseToBuyOrSell(poloniexClient, currencyDataEntities[0], accountInfo).then(() => {
+  Promise.all(batchRequests).then((promiseResults) => {
+    chooseToBuyOrSell(promiseResults[0], promiseResults[1][0], promiseResults[2]).then(() => {
       callback();
     }).catch(callback);
   }).catch(callback);
