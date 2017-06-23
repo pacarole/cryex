@@ -124,7 +124,7 @@ const makeSellDecision = (balances, currencyInfo) => {
     
     return poloniexClient.sellAsync(currencyPair, rate, amount, false /* fillOrKill */, true /* immediateOrCancel */);
   } else {
-    Promise.resolve();
+    return Promise.resolve();
   }
 }
 
