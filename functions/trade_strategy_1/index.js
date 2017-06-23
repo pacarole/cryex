@@ -35,6 +35,8 @@ const chooseToBuyOrSell = () => {
   if(!accountInfo.lastAction || accountInfo.lastAction == 'SELL') {
     return buy().then(() => {
       return datastore.get(accountInfoDataStoreKey).then((accountInfoEntity) => {
+        console.log("ACCOUNT", accountInfoEntity, _.merge(accountInfoEntity[0], { lastAction: 'BUY' }));
+        
         return datastore.save({
           key: accountInfoDataStoreKey,
           data: _.merge(accountInfoEntity[0], { lastAction: 'BUY' })
