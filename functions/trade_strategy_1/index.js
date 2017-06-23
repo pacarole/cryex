@@ -33,6 +33,7 @@ exports.buyOrSell = (event, callback) => {
 
 const chooseToBuyOrSell = () => {
   if(!accountInfo.lastAction || accountInfo.lastAction == 'SELL') {
+    console.log("BUY TIME");
     return buy().then(() => {
       return datastore.update({
         key: accountInfoDataStoreKey,
@@ -40,6 +41,7 @@ const chooseToBuyOrSell = () => {
       });
     });
   } else {
+    console.log("SELL TIME");
     return sell().then(() => {
       return datastore.update({
         key: accountInfoDataStoreKey,
@@ -59,10 +61,14 @@ const buy = () => {
   });
   filteredCurrencyData.reverse();
   
+  console.log("CURRENCY LIST", filteredCurrencyData);
+  
   let maxBuyCash;
 
   return Promise.each(filteredCurrencyData, (currencyInfo) => {
     poloniexClient.returnBalancesAsync().then((balances) => {
+      console.log("currencyInfo", currencyInfo);
+      console.log("cash", availableCash);
       let availableCash = parseFloat(balances.USDT);
       if(_.isUndefined(maxBuyCash)) maxBuyCash = availableCash * MAX_BUY_DIVIDER;
 
@@ -76,6 +82,8 @@ const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
   const priceIncreasePercentage = (currencyInfo.currentPrice - currencyInfo.pastPrice) / currencyInfo.pastPrice * 100;
   const stabilityThreshold = 5 - 4 * currencyInfo.volatilityFactor;
   const shouldBuy = priceIncreasePercentage > stabilityThreshold;
+  
+  console.log("BUY FACTORS", buyCash, shouldBuy);
   
   if(buyCash > 0 && shouldBuy) {
     const currencyPair = 'USDT_' + currencyInfo.name;
@@ -116,6 +124,8 @@ const makeSellDecision = (balances, currencyInfo) => {
     const stabilityThreshold = 15 - 5 * currencyInfo.volatilityFactor;
     const shouldSell = peakPriceDifferential > stabilityThreshold;
 
+    console.log("SELL FACTORS", currencyBalance, shouldSell);
+    
     if(currencyBalance > 0 && shouldSell) {
       const currencyPair = 'USDT_' + currencyName;
       const rate = currencyInfo.currentPrice;
@@ -157,7 +167,10 @@ const updateAccountInfo = (currencyName, currentPrice, newBuyPrice) => {
     if(currentPrice < accountInfo[lowPriceProp]) newAccountInfo[lowPriceProp] = currentPrice;    
   }
   
+  console.log("MAYBE UPDATE", newAccountInfo);
   if(_.size(newAccountInfo) > 0) {
+    console.log("UPDATE!", newAccountInfo);
+    
     datastore.update({
       key: accountInfoDataStoreKey,
       data: newAccountInfo
