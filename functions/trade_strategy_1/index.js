@@ -23,6 +23,7 @@ exports.buyOrSell = (event, callback) => {
   Promise.all(batchRequests).then(([poloniexClient, currencyDataEntities, accountInfo]) => {
     poloniexClientSingleton = poloniexClient;
     poloniexReturnBalances = Promise.promisify(poloniexClientSingleton.returnBalances, { context: poloniexClientSingleton });
+    console.log("SEE RESULTS", poloniexReturnBalances);
     poloniexBuy = Promise.promisify(poloniexClientSingleton.buy, { context: poloniexClientSingleton });
     poloniexSel = Promise.promisify(poloniexClientSingleton.sell, { context: poloniexClientSingleton });
    
