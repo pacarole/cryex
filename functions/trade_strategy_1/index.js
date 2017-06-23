@@ -65,7 +65,7 @@ const buy = () => {
   
   let maxBuyCash;
 
-  return Promise.each(filteredCurrencyData, (currencyInfo) => {
+  return Promise.mapSeries(filteredCurrencyData, (currencyInfo) => {
     poloniexClient.returnBalances().then((balances) => {
       let availableCash = parseFloat(balances.USDT);
       if(_.isUndefined(maxBuyCash)) maxBuyCash = availableCash * MAX_BUY_DIVIDER;
@@ -102,7 +102,7 @@ const sell = () => {
   });
   
   return poloniexClient.returnBalances().then((balances) => {
-    return Promise.each(filteredCurrencyData, (currencyInfo) => {
+    return Promise.mapSeries(filteredCurrencyData, (currencyInfo) => {
       return makeSellDecision(balances, currencyInfo).then(() => {
         return updateAccountInfo(currencyInfo[datastore.KEY].name, currencyInfo.currentPrice);
       });
