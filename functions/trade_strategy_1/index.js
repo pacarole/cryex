@@ -86,9 +86,13 @@ const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
     const rate = currencyInfo.currentPrice;
     const amount = buyCash / rate;
     
-    return poloniexClient.buy(currencyPair, rate, amount, null /* fillOrKill */, 1 /* immediateOrCancel */).then(() => {
-      return updateAccountInfo(currencyName, rate, rate);
-    });
+    if(amount > 0.0001) {
+      return poloniexClient.buy(currencyPair, rate, amount, null /* fillOrKill */, 1 /* immediateOrCancel */).then(() => {
+        return updateAccountInfo(currencyName, rate, rate);
+      });
+    } else {
+      return updateAccountInfo(currencyName, rate);
+    }
   } else {
     return updateAccountInfo(currencyName, currencyInfo.currentPrice);
   }
