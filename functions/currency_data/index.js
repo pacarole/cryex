@@ -90,8 +90,8 @@ const aggregateCurrencyData = (currency, data, slopeSpan) => {
   return {
     currentPrice: newestRow.last,
     pastPrice: oldestRow.last,
-    percentageGain: (regressionLine(slopeSpan) - regression.b) / regression.b * 100, 
-    volatilityFactor: stats.rSquared(samples, regressionLine),
+    percentageGain: (regressionLine(slopeSpan) - regression.b) / regression.b * 100,
+    volatilityFactor: stats.rSquared(samples, regressionLine) || 0,
     volume24h: newestRow.baseVolume,
     highestBid: newestRow.highestBid
   };
