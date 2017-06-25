@@ -76,7 +76,7 @@ const aggregateCurrencyData = (currency, data) => {
 
   const regression = stats.linearRegression(samples);
   const regressionLine = stats.linearRegressionLine(regression);
-  const lastpoint = regressionLine(CURRENCY_AGGREGATION_MINUTES) - regression.b;
+  const lastPoint = regressionLine(CURRENCY_AGGREGATION_MINUTES) - regression.b;
   
   return {
     currentPrice: newestRow.last,
