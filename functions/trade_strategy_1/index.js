@@ -54,12 +54,12 @@ const chooseToBuyOrSell = () => {
 }
 
 const buy = () => {
-  // sort currency data w/ positive slope by slope * volatilityFactor
+  // sort currency data w/ positive slope by percentageGain * volatilityFactor
   let filteredCurrencyData = _.filter(currencyData, (datum) => {
-    return datum.slopeAngle > 0;
+    return datum.percentageGain > 0;
   });
   filteredCurrencyData = _.sortBy(filteredCurrencyData, (datum) => {
-    return datum.slopeAngle * datum.volatilityFactor;
+    return datum.percentageGain * datum.volatilityFactor;
   });
   filteredCurrencyData.reverse();
   
@@ -78,8 +78,8 @@ const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
   const currencyName = currencyInfo[datastore.KEY].name;
   const buyCash = availableCash < maxBuyCash ? availableCash : maxBuyCash;
   const priceIncreasePercentage = (currencyInfo.currentPrice - currencyInfo.pastPrice) / currencyInfo.pastPrice * 100;
-  const stabilityThreshold = 40 - 30 * currencyInfo.volatilityFactor;
-  const shouldBuy = currencyInfo.shortSlopeAngle > stabilityThreshold && currencyInfo.slopeAngle > 0;
+  const stabilityThreshold = 1 - 0.8 * currencyInfo.volatilityFactor;
+  const shouldBuy = currencyInfo.shortPercentageGain > stabilityThreshold && currencyInfo.percentageGain > 0;
 
   if(buyCash > 0 && shouldBuy) {
     const currencyPair = 'USDT_' + currencyName;
@@ -100,7 +100,7 @@ const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
 
 const sell = () => {
    let filteredCurrencyData = _.filter(currencyData, (datum) => {
-    return datum.shortSlopeAngle < 0;
+    return datum.shortPercentageGain < 0;
   });
   
   return poloniexClient.returnBalances().then((balances) => {
@@ -122,7 +122,7 @@ const makeSellDecision = (balances, currencyInfo) => {
   if(buyPrice) {
     const peakPriceDifferential = (peakPrice - currencyInfo.currentPrice) / (peakPrice - buyPrice) * 100;
     const stabilityThreshold = 15 - 5 * currencyInfo.volatilityFactor;
-    const shouldSell = currencyInfo.slopeAngle < 0 || peakPriceDifferential > stabilityThreshold;
+    const shouldSell = currencyInfo.percentageGain < 0 || peakPriceDifferential > stabilityThreshold;
     
     if(currencyBalance > 0 && shouldSell) {
       const currencyPair = 'USDT_' + currencyName;
