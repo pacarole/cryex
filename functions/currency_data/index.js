@@ -93,7 +93,8 @@ const aggregateCurrencyData = (currency, data, slopeSpan) => {
     slope: regression.m,
     slopeAngle: Math.atan(lastPoint / slopeSpan) * 180 / Math.PI, 
     volatilityFactor: stats.rSquared(samples, regressionLine),
-    volume24h: newestRow.baseVolume
+    volume24h: newestRow.baseVolume,
+    highestBid: newestRow.highestBid
   };
 }
 
