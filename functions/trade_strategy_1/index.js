@@ -78,8 +78,8 @@ const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
   const currencyName = currencyInfo[datastore.KEY].name;
   const buyCash = availableCash < maxBuyCash ? availableCash : maxBuyCash;
   const priceIncreasePercentage = (currencyInfo.currentPrice - currencyInfo.pastPrice) / currencyInfo.pastPrice * 100;
-  const stabilityThreshold = 2 - 1.5 * currencyInfo.volatilityFactor;
-  const shouldBuy = priceIncreasePercentage > stabilityThreshold;
+  const stabilityThreshold = 40 - 30 * currencyInfo.volatilityFactor;
+  const shouldBuy = currencyInfo.slopeAngle > stabilityThreshold;
 
   if(buyCash > 0 && shouldBuy) {
     const currencyPair = 'USDT_' + currencyName;
