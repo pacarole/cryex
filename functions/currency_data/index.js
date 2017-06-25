@@ -54,7 +54,8 @@ const aggregateAndSaveCurrencyData = (entities) => {
       return row.dateTime > shortMaxAgeDate;
     });
     const shortCurrencyData = aggregateCurrencyData(currency, shortData, SHORT_CURRENCY_AGGREGATION_MINUTES);
-    primaryCurrencyData.shortSlopeAngle = shortCurrencyData.slopeAngle;
+    primaryCurrencyData.shortPercentageGain = shortCurrencyData.percentageGain;
+    primaryCurrencyData.shortVolatilityFactor = shortCurrencyData.volatilityFactor;
     
     currencyData.push({
       key: datastore.key(['currency_data', currency]),
@@ -85,13 +86,11 @@ const aggregateCurrencyData = (currency, data, slopeSpan) => {
 
   const regression = stats.linearRegression(samples);
   const regressionLine = stats.linearRegressionLine(regression);
-  const lastPoint = regressionLine(slopeSpan) - regression.b;
   
   return {
     currentPrice: newestRow.last,
     pastPrice: oldestRow.last,
-    slope: regression.m,
-    slopeAngle: Math.atan(lastPoint / slopeSpan) * 180 / Math.PI, 
+    percentageGain: (regressionLine(slopeSpan) - regression.b) / regression.b * 100, 
     volatilityFactor: stats.rSquared(samples, regressionLine),
     volume24h: newestRow.baseVolume,
     highestBid: newestRow.highestBid
