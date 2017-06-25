@@ -79,7 +79,7 @@ const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
   const buyCash = availableCash < maxBuyCash ? availableCash : maxBuyCash;
   const priceIncreasePercentage = (currencyInfo.currentPrice - currencyInfo.pastPrice) / currencyInfo.pastPrice * 100;
   const stabilityThreshold = 1 - 0.8 * currencyInfo.volatilityFactor;
-  const shouldBuy = currencyInfo.shortPercentageGain > stabilityThreshold && currencyInfo.percentageGain > 0;
+  const shouldBuy = currencyInfo.shortPercentageGain > stabilityThreshold;
 
   if(buyCash > 0 && shouldBuy) {
     const currencyPair = 'USDT_' + currencyName;
