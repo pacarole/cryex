@@ -76,11 +76,13 @@ const aggregateCurrencyData = (currency, data) => {
 
   const regression = stats.linearRegression(samples);
   const regressionLine = stats.linearRegressionLine(regression);
-
+  const lastpoint = regressionLine(CURRENCY_AGGREGATION_MINUTES) - regression.b;
+  
   return {
     currentPrice: newestRow.last,
     pastPrice: oldestRow.last,
     slope: regression.m,
+    slopeAngle: Math.atan(lastPoint / CURRENCY_AGGREGATION_MINUTES) * 180 / Math.PI, 
     volatilityFactor: stats.rSquared(samples, regressionLine),
     volume24h: newestRow.baseVolume
   };
