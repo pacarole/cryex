@@ -56,10 +56,10 @@ const chooseToBuyOrSell = () => {
 const buy = () => {
   // sort currency data w/ positive slope by slope * volatilityFactor
   let filteredCurrencyData = _.filter(currencyData, (datum) => {
-    return datum.slope > 0;
+    return datum.slopeAngle > 0;
   });
   filteredCurrencyData = _.sortBy(filteredCurrencyData, (datum) => {
-    return datum.slope * datum.volatilityFactor;
+    return datum.slopeAngle * datum.volatilityFactor;
   });
   filteredCurrencyData.reverse();
   
@@ -100,7 +100,7 @@ const makeBuyDecision = (maxBuyCash, availableCash, currencyInfo) => {
 
 const sell = () => {
    let filteredCurrencyData = _.filter(currencyData, (datum) => {
-    return datum.slope < 0;
+    return datum.shortSlopeAngle < 0;
   });
   
   return poloniexClient.returnBalances().then((balances) => {
@@ -122,7 +122,7 @@ const makeSellDecision = (balances, currencyInfo) => {
   if(buyPrice) {
     const peakPriceDifferential = (peakPrice - currencyInfo.currentPrice) / (peakPrice - buyPrice) * 100;
     const stabilityThreshold = 15 - 5 * currencyInfo.volatilityFactor;
-    const shouldSell = peakPriceDifferential > stabilityThreshold;
+    const shouldSell = currencyInfo.slopeAngle < 0 || peakPriceDifferential > stabilityThreshold;
     
     if(currencyBalance > 0 && shouldSell) {
       const currencyPair = 'USDT_' + currencyName;
