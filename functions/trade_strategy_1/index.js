@@ -158,7 +158,7 @@ const updateAccountInfo = (currencyName, currentPrice, newBuyPrice) => {
   
   if(newBuyPrice) {
     newAccountInfo[buyPriceProp] = currentPrice;
-    newAccountInfo[peakPriceProp] = currentPrice;
+    newAccountInfo[peakPriceProp] = currentPrice * 1.001;
     newAccountInfo[lowPriceProp] = currentPrice;
   } else if(accountInfo[buyPriceProp]) {
     if(currentPrice > accountInfo[peakPriceProp]) newAccountInfo[peakPriceProp] = currentPrice;
