@@ -6,7 +6,7 @@ const pubsub = require('@google-cloud/pubsub')({ promise: Promise });
 
 const currencyChangeBroadcastTopic = pubsub.topic('new-currency-data');
 
-const CURRENCY_AGGREGATION_MINUTES = 15;
+const CURRENCY_AGGREGATION_MINUTES = 10;
 const SHORT_CURRENCY_AGGREGATION_MINUTES = 5;
 const MS_PER_MINUTE = 60000;
 
