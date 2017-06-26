@@ -120,7 +120,7 @@ const makeSellDecision = (balances, currencyInfo) => {
   const peakPrice = accountInfo[currencyName + '_peakPrice'];
   
   if(buyPrice) {
-    const peakPriceDifferential = (peakPrice - currencyInfo.currentPrice) / (peakPrice - buyPrice) * 100;
+    const peakPriceDifferential = (peakPrice - currencyInfo.highestBid) / (peakPrice - buyPrice) * 100;
     const stabilityThreshold = 15 - 5 * currencyInfo.volatilityFactor;
     const shouldSell = currencyInfo.percentageGain < 0 || peakPriceDifferential > stabilityThreshold;
     
