@@ -63,7 +63,7 @@ const formatCurrencyData = (currencyPair, data, dateTime) => {
 }
 
 const broadcastTickerChange = () => {
-  return tickerChangeBroadcastTopic.publish('ticker data updated');
+  return tickerChangeBroadcastTopic.publish('USDT,BTC');
 }
 
 const getOldTickerEntries = () => {
