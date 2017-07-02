@@ -4,8 +4,6 @@ const stats = require('simple-statistics');
 const datastore = require('@google-cloud/datastore')({ promise: Promise });
 const pubsub = require('@google-cloud/pubsub')({ promise: Promise });
 
-const currencyChangeBroadcastTopic = pubsub.topic('new-currency-data');
-
 const CURRENCY_AGGREGATION_MINUTES = 10;
 const SHORT_CURRENCY_AGGREGATION_MINUTES = 5;
 const MS_PER_MINUTE = 60000;
@@ -16,16 +14,37 @@ const MS_PER_MINUTE = 60000;
  * @param {!Object} event The Cloud Functions event.
  * @param {!Function} The callback function.
  */
-exports.update = (event, callback) => {
-  getCurrencyEntries()
-    .then(aggregateAndSaveCurrencyData)
-    .then(broadcastCurrencyDataChange)
+exports.updateUSDT = (event, callback) => {
+  updateForCurrency('USDT')
     .then(() => {
       callback();
     }).catch(callback);
 };
 
-const aggregateAndSaveCurrencyData = (entities) => {
+/**
+ * Triggered from a message on a Cloud Pub/Sub topic.
+ *
+ * @param {!Object} event The Cloud Functions event.
+ * @param {!Function} The callback function.
+ */
+exports.updateBTC = (event, callback) => {
+  updateForCurrency('BTC')
+    .then(() => {
+      callback();
+    }).catch(callback);
+};
+
+const = updateForCurrency = (baseCurrency) => {
+  return getCurrencyEntries(baseCurrency)
+    .then((entities) => {
+      aggregateAndSaveCurrencyData(baseCurrency, entities);
+    }).then(() => {
+      broadcastCurrencyDataChange(baseCurrency);
+    });
+};
+
+
+const aggregateAndSaveCurrencyData = (baseCurrency, entities) => {
   const currentDate = new Date();
   const maxAgeDate = new Date(currentDate.getTime() - CURRENCY_AGGREGATION_MINUTES * MS_PER_MINUTE);
   const shortMaxAgeDate = new Date(currentDate.getTime() - SHORT_CURRENCY_AGGREGATION_MINUTES * MS_PER_MINUTE);
@@ -56,9 +75,9 @@ const aggregateAndSaveCurrencyData = (entities) => {
     const shortCurrencyData = aggregateCurrencyData(currency, shortData, SHORT_CURRENCY_AGGREGATION_MINUTES);
     primaryCurrencyData.shortPercentageGain = shortCurrencyData.percentageGain;
     primaryCurrencyData.shortVolatilityFactor = shortCurrencyData.volatilityFactor;
-    
+
     currencyData.push({
-      key: datastore.key(['currency_data', currency]),
+      key: datastore.key(['currency_data_' + baseCurrency, currency]),
       data: primaryCurrencyData
     });
   });
@@ -76,7 +95,7 @@ const aggregateCurrencyData = (currency, data, slopeSpan) => {
   const oldestRow = tickerRows[0];
   const newestRow = tickerRows[numRows - 1];
   const fistTimeStamp = oldestRow.dateTime.getTime();
-  
+
   let samples = [];
   _.forEach(tickerRows, (row) => {
     let adjustedTime = row.dateTime.getTime() - fistTimeStamp;
@@ -86,7 +105,7 @@ const aggregateCurrencyData = (currency, data, slopeSpan) => {
 
   const regression = stats.linearRegression(samples);
   const regressionLine = stats.linearRegressionLine(regression);
-  
+
   return {
     currentPrice: newestRow.last,
     pastPrice: oldestRow.last,
@@ -97,14 +116,15 @@ const aggregateCurrencyData = (currency, data, slopeSpan) => {
   };
 }
 
-const broadcastCurrencyDataChange = () => {
+const broadcastCurrencyDataChange = (baseCurrency) => {
+  const currencyChangeBroadcastTopic = pubsub.topic('new-currency-data-' + baseCurrency);
   return currencyChangeBroadcastTopic.publish('currency data updated');
 }
 
-const getCurrencyEntries = (currency) => {
+const getCurrencyEntries = (baseCurrency) => {
   const query = datastore.createQuery('ticker');
-  query.filter('currencyPair', '>', 'USDT_AAAA');
-  query.filter('currencyPair', '<', 'USDT_ZZZZ');
+  query.filter('currencyPair', '>', baseCurrency + '_AAAA');
+  query.filter('currencyPair', '<', baseCurrency + '_ZZZZ');
 
   return datastore.runQuery(query);
 }
