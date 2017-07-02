@@ -34,7 +34,7 @@ exports.updateBTC = (event, callback) => {
     }).catch(callback);
 };
 
-const = updateForCurrency = (baseCurrency) => {
+const updateForCurrency = (baseCurrency) => {
   return getCurrencyEntries(baseCurrency)
     .then((entities) => {
       aggregateAndSaveCurrencyData(baseCurrency, entities);
