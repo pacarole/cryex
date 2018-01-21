@@ -7,7 +7,7 @@ const pubsub = require('@google-cloud/pubsub')({ promise: Promise });
 const poloniexApiDataStoreKey = datastore.key(['poloniex_api', 'ticker']);
 const tickerChangeBroadcastTopic = pubsub.topic('new-ticker-data');
 
-const TICKER_MAX_AGE_MINUTES = 20;
+const TICKER_MAX_AGE_MINUTES = 35;
 const MS_PER_MINUTE = 60000;
 
 /**
