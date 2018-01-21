@@ -54,12 +54,12 @@ const chooseToBuyOrSell = () => {
 }
 
 const buy = () => {
-  // sort currency data w/ positive slope by percentageGain * volatilityFactor
+  // sort currency data w/ positive or neutral(USDT) percentageGain by percentageGain
   let filteredCurrencyData = _.filter(currencyData, (datum) => {
-    return datum.percentageGain > 0;
+    return datum.percentageGain >= 0;
   });
   filteredCurrencyData = _.sortBy(filteredCurrencyData, (datum) => {
-    return datum.percentageGain * datum.volatilityFactor;
+    return datum.percentageGain;
   });
   filteredCurrencyData.reverse();
   
