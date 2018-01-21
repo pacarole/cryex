@@ -4,7 +4,7 @@ const stats = require('simple-statistics');
 const datastore = require('@google-cloud/datastore')({ promise: Promise });
 const pubsub = require('@google-cloud/pubsub')({ promise: Promise });
 
-const CURRENCY_AGGREGATION_MINUTES = 10;
+const CURRENCY_AGGREGATION_MINUTES = 30;
 const SHORT_CURRENCY_AGGREGATION_MINUTES = 5;
 const MS_PER_MINUTE = 60000;
 
@@ -109,7 +109,8 @@ const aggregateCurrencyData = (currency, data, slopeSpan) => {
   return {
     currentPrice: newestRow.last,
     pastPrice: oldestRow.last,
-    percentageGain: (regressionLine(slopeSpan) - regression.b) / regression.b * 100,
+    percentageGain: (newestRow.last - oldestRow.last) / oldestRow.last * 100,
+    // percentageGain: (regressionLine(slopeSpan) - regression.b) / regression.b * 100,
     volatilityFactor: stats.rSquared(samples, regressionLine) || 0,
     volume24h: newestRow.baseVolume,
     highestBid: newestRow.highestBid
