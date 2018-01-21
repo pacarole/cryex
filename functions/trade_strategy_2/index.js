@@ -3,8 +3,8 @@ const Promise = require('bluebird');
 const Poloniex = require('poloniex-api-node');
 const datastore = require('@google-cloud/datastore')({ promise: Promise });
 
-const poloniexApiDataStoreKey = datastore.key(['poloniex_api', 'strategy1']);
-const accountInfoDataStoreKey = datastore.key(['account_info', 'strategy1']);
+const poloniexApiDataStoreKey = datastore.key(['poloniex_api', 'strategy2']);
+const accountInfoDataStoreKey = datastore.key(['account_info', 'strategy2']);
 
 const MS_PER_MINUTE = 60000;
 const MAX_BUY_DIVIDER = 1/3;
